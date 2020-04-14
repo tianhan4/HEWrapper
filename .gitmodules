@@ -1,0 +1,4 @@
+[submodule "third_party/seal"]
+	path = third_party/seal
+	url = https://github.com/microsoft/SEAL.git
+	branch = 3.4.5
