@@ -7,33 +7,30 @@ namespace hewrapper {
 
 class HEBase {
 public:
-    virtual HEBase(PubKeyBase k, PlainTextBase val) = 0;
+    virtual HEBase() = 0;
+    virtual HEBase(const PubKeyBase &k, const PlainTextBase &val) = 0;
     virtual ~HEBase() = default;
 
-    virtual PlainTextBase decrypt(PrivateKeyBase k) = 0;
+    virtual PlainTextBase decrypt(const PrivateKeyBase &k) = 0;
+
+    HEBase(const HEBase &copy) = default;
+    HEBase(HEBase &&copy) = default;
     
     // HE operation
-    virtual HEBase& operator++() = 0;
-    virtual HEBase& operator--() = 0;
+    virtual HEBase& operator=(const HEBase &b) = 0;
+    virtual HEBase& operator+(const HEBase &b) = 0;
+    virtual HEBase& operator-(const HEBase &b) = 0;
+    virtual HEBase& operator*(const HEBase &b) = 0;
+    virtual HEBase& operator+(const PlainTextBase &b) = 0;
+    virtual HEBase& operator-(const PlainTextBase &b) = 0;
+    virtual HEBase& operator*(const PlainTextBase &b) = 0;
 
-    virtual HEBase& operator=(const HEBase& b) = 0;
-    virtual HEBase& operator+(const HEBase& b) = 0;
-    virtual HEBase& operator-(const HEBase& b) = 0;
-    virtual HEBase& operator*(const HEBase& b) = 0;
-    virtual HEBase& operator/(const HEBase& b) = 0;
-    virtual HEBase& operator+(const PlainTextBase& b) = 0;
-    virtual HEBase& operator-(const PlainTextBase& b) = 0;
-    virtual HEBase& operator*(const PlainTextBase& b) = 0;
-    virtual HEBase& operator/(const PlainTextBase& b) = 0;
-
-    virtual HEBase& operator+=(const HEBase& b) = 0;
-    virtual HEBase& operator-=(const HEBase& b) = 0;
-    virtual HEBase& operator*=(const HEBase& b) = 0;
-    virtual HEBase& operator/=(const HEBase& b) = 0;
-    virtual HEBase& operator+=(const PlainTextBase& b) = 0;
-    virtual HEBase& operator-=(const PlainTextBase& b) = 0;
-    virtual HEBase& operator*=(const PlainTextBase& b) = 0;
-    virtual HEBase& operator/=(const PlainTextBase& b) = 0;
+    virtual HEBase& operator+=(const HEBase &b) = 0;
+    virtual HEBase& operator-=(const HEBase &b) = 0;
+    virtual HEBase& operator*=(const HEBase &b) = 0;
+    virtual HEBase& operator+=(const PlainTextBase &b) = 0;
+    virtual HEBase& operator-=(const PlainTextBase &b) = 0;
+    virtual HEBase& operator*=(const PlainTextBase &b) = 0;
 } // class HEBase
 
 } // namespace hewrapper

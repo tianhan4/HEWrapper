@@ -22,7 +22,7 @@ enum class seal_scheme : std::uint8_t {
 
 class SEALEncryptionParameters {
 public:
-    SEALEncryptionParameters(seal_scheme sc = seal_scheme::none)
+    explicit SEALEncryptionParameters(seal_scheme sc = seal_scheme::none)
     : parms(static_cast<std::uint8_t>(sc)) {}
 
     inline void set_poly_modulus_degree(std::size_t poly_modulus_degree) {

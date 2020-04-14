@@ -13,12 +13,12 @@ namespace hewrapper {
 class SEALPlaintext : public PlainTextBase {
 public:
     SEALPlaintext() = default;
-
+    
 protected:
     Plaintext plaintext;
 } // class SEALPlaintext
 
-class SEALCKKSEncoder : public PlainTextBase {
+class SEALCKKSEncoder {
 public:
     friend class SEALCtx;
     friend class SEALPlaintext;
