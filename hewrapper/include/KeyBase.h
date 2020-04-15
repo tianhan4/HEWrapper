@@ -4,18 +4,20 @@ namespace hewrapper {
 
 class KeyBase {
 public:
-    virtual KeyBase() = 0;
-    virtual ~KeyBase() = 0;
-}
+    KeyBase();
+    ~KeyBase();
+};
 
 class PubKeyBase : public KeyBase {
-    virtual PubKeyBase() = 0;
-    virtual ~PubKeyBase() = 0;
-}
+public:
+    PubKeyBase();
+    ~PubKeyBase();
+};
 
 class PrivateKeyBase : public KeyBase {
-    virtual PrivateKeyBase() = 0;
-    virtual ~PrivateKeyBase() = 0;
-}
+public:
+    PrivateKeyBase();
+    ~PrivateKeyBase();
+};
 
 } // namespace hewrapper

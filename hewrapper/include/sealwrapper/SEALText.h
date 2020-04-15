@@ -12,17 +12,17 @@ namespace hewrapper {
 
 class SEALPlaintext : public PlainTextBase {
 public:
+    friend class SEALCKKSEncoder;
+    friend class SEALCiphertext;
+
     SEALPlaintext() = default;
     
 protected:
     Plaintext plaintext;
-} // class SEALPlaintext
+}; // class SEALPlaintext
 
 class SEALCKKSEncoder {
 public:
-    friend class SEALCtx;
-    friend class SEALPlaintext;
-
     SEALCKKSEncoder(std::shared_ptr<SEALCtx> ctx): encoder(ctx->context) {};
 
     inline std::size_t slot_count() const noexcept {
@@ -45,6 +45,6 @@ public:
 
 private:
     CKKSEncoder encoder;
-} // class SEALCKKSEncoder
+}; // class SEALCKKSEncoder
 
 } // namespace hewrapper

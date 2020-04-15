@@ -22,6 +22,8 @@ enum class seal_scheme : std::uint8_t {
 
 class SEALEncryptionParameters {
 public:
+    friend class SEALCtx;
+
     explicit SEALEncryptionParameters(seal_scheme sc = seal_scheme::none)
     : parms(static_cast<std::uint8_t>(sc)) {}
 
@@ -35,11 +37,13 @@ public:
 
 protected:
     EncryptionParameters parms;
-} // class SEALEncryptionParameters
+}; // class SEALEncryptionParameters
 
 class SEALCtx {
 public:
-    friend class SEALEncryptionParameters;
+    friend class SEALEncryptor;
+    friend class SEALDecryptor;
+    friend class SEALCKKSEncoder;
 
     static std::shared_ptr<SEALCtx> Create(const SEALEncryptionParameters &parms) {
         return std::shared_ptr<SEALCtx>(
@@ -48,26 +52,31 @@ public:
     }
 
     inline auto get_public_key() {
-        return public_key;
+        return *public_key;
     }
 
     inline auto get_secret_key() {
-        return secret_key;
+        return *secret_key;
     }
 
     inline auto get_relin_keys() {
-        return relin_keys;
+        return *relin_keys;
     }
 
 protected:
     std::shared_ptr<SEALContext> context;
 
 private:
-    SEALCtx(std::shared_ptr<SEALContext> ctx):context(ctx) {
+    SEALCtx(std::shared_ptr<SEALContext> ctx)
+    :context(ctx),
+     public_key(NULL),
+     secret_key(NULL),
+     relin_keys(NULL)
+    {
         KeyGenerator keygen(context);
-        public_key = keygen.public_key();
-        secret_key = keygen.secret_key();
-        relin_keys = keygen.relin_keys();
+        public_key = std::make_shared<const PublicKey>(keygen.public_key());
+        secret_key = std::make_shared<const SecretKey>(keygen.secret_key());
+        relin_keys = std::make_shared<RelinKeys>(keygen.relin_keys());
     };
 
     SEALCtx(const SEALCtx &copy) = delete;
@@ -78,9 +87,9 @@ private:
 
     SEALCtx &operator =(SEALCtx &&assign) = delete;
     
-    const PublicKey &public_key;
-    const SecretKey &secret_key;
-    RelinKeys relin_keys;
-} // class SEALCtx
+    std::shared_ptr<const PublicKey> public_key;
+    std::shared_ptr<const SecretKey> secret_key;
+    std::shared_ptr<RelinKeys> relin_keys;
+}; // class SEALCtx
 
 } // namespace hewrapper

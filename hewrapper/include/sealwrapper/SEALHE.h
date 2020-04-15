@@ -3,6 +3,8 @@
 #include <memory>
 #include <seal/seal.h>
 #include "HEBase.h"
+#include "sealwrapper/SEALKey.h"
+#include "sealwrapper/SEALText.h"
 
 using namespace seal;
 
@@ -10,10 +12,6 @@ namespace hewrapper {
 
 class SEALCiphertext: public HEBase {
 public:
-    friend class SEALEncryptor;
-    friend class SEALDecryptor;
-    friend class SEALPlaintext;
-
     SEALCiphertext(): evaluator(NULL){}
 
     SEALCiphertext(const SEALEncryptor &k, const SEALPlaintext &val)
@@ -21,11 +19,9 @@ public:
         k.encryptor.encrypt(val.plaintext, ciphertext);
     }
 
-    inline SEALPlaintext decrypt(const SEALDecryptor &k) {
-        Plaintext p;
-        k.decryptor.decrypt(ciphertext, p);
+    inline PlainTextBase decrypt(PrivateKeyBase &k) override{
         SEALPlaintext sp;
-        sp.plaintext = p;
+        static_cast<SEALDecryptor&>(k).decryptor.decrypt(ciphertext, sp.plaintext);
         return sp;
     }
 
@@ -46,7 +42,7 @@ public:
 
 private:
     Ciphertext ciphertext;
-    std::shared_ptr<SEALEvaluator> evaluator;
-}
+    std::shared_ptr<Evaluator> evaluator;
+};
 
 } // namespace hewrapper
