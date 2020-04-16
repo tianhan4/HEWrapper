@@ -4,8 +4,8 @@ namespace hewrapper {
 
 class PlainTextBase {
 public:
-    PlainTextBase();
-    ~PlainTextBase();
+    PlainTextBase() = default;
+    ~PlainTextBase() = default;
 
     PlainTextBase(const PlainTextBase &copy) = default;
     PlainTextBase(PlainTextBase &&copy) = default;

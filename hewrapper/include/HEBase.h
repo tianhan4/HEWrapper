@@ -1,21 +1,21 @@
 #pragma once
 
-#include <KeyBase.h>
-#include <TextBase.h>
+#include "KeyBase.h"
+#include "TextBase.h"
 
 namespace hewrapper {
 
 class EncryptionParametersBase {
 public:
     EncryptionParametersBase() = default;
-    ~EncryptionParametersBase();
+    ~EncryptionParametersBase() = default;
 };
 
 class HEBase {
 public:
     HEBase() = default;
     HEBase(const PubKeyBase &k, const PlainTextBase &val) {};
-    ~HEBase();
+    ~HEBase() = default;
 
     virtual PlainTextBase decrypt(PrivateKeyBase &k) = 0;
 

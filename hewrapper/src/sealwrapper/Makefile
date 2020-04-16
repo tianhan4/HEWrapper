@@ -4,15 +4,14 @@
 SEAL_DIR := ../../../third_party/seal/native/src
 CUR_DIR := $(shell dirname $(shell pwd)/$(lastword $(MAKEFILE_LIST)))
 
-SEAL_VER := 3.4
-
 INCLUDE_DIR := -I./include/SEAL-$(SEAL_VER) -I../../include
 CFLAGS := -Wall -O2 -fPIC -std=c++17
 
 all: build
 
 build: clean lib/libseal.a
-	$(CC) $(CFLAGS) $(INCLUDE_DIR) -c -o sealwrapper.o SEALHE.cpp
+	$(CC) $(CFLAGS) $(INCLUDE_DIR) -c -o seal.o SEAL.cpp
+	$(CC) $(CFLAGS) $(INCLUDE_DIR) -c -o sealhe.o SEALHE.cpp
 	
 lib/libseal.a:
 	@cd $(SEAL_DIR); cmake . -DCMAKE_INSTALL_PREFIX=$(CUR_DIR); make -j4; make install

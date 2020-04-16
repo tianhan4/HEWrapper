@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cstddef>
 #include <iostream>
 #include <fstream>
@@ -60,4 +62,9 @@ inline void print_vector(std::vector<T> vec, std::size_t print_size = 4, int pre
     Restore the old std::cout formatting.
     */
     std::cout.copyfmt(old_fmt);
+}
+
+inline void print_line(int line_number)
+{
+    std::cout << "Line " << std::setw(3) << line_number << " --> ";
 }

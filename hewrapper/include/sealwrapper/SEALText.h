@@ -16,6 +16,15 @@ public:
     friend class SEALCiphertext;
 
     SEALPlaintext() = default;
+
+    inline auto scale() const noexcept {
+        return plaintext.scale();
+    }
+
+    SEALPlaintext(const SEALPlaintext &copy) = default;
+    SEALPlaintext(SEALPlaintext &&copy) = default;
+    SEALPlaintext& operator=(const SEALPlaintext &assign) = default;
+    SEALPlaintext& operator=(SEALPlaintext &&assign) = default;
     
 protected:
     Plaintext plaintext;
