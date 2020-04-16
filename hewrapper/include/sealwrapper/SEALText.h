@@ -36,6 +36,14 @@ public:
         encoder.encode(values, scale, destination.plaintext);
     }
 
+    inline void encode(double value, double scale, SEALPlaintext &destination) {
+        encoder.encode(value, scale, destination.plaintext);
+    }
+
+    inline void encode(std::int64_t value, SEALPlaintext &destination) {
+        encoder.encode(value, destination.plaintext);
+    }
+
     template<typename T, typename = std::enable_if_t<
             std::is_same<std::remove_cv_t<T>, double>::value ||
             std::is_same<std::remove_cv_t<T>, std::complex<double>>::value>>

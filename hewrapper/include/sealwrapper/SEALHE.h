@@ -12,10 +12,10 @@ namespace hewrapper {
 
 class SEALCiphertext: public HEBase {
 public:
-    SEALCiphertext(): evaluator(NULL){}
+    SEALCiphertext(): evaluator(NULL), relin_keys(NULL), level(0), require_rescale(false) {}
 
     SEALCiphertext(const SEALEncryptor &k, const SEALPlaintext &val)
-    : evaluator(k.evaluator) {
+    : evaluator(k.evaluator), relin_keys(k.relin_keys), level(0), require_rescale(false) {
         k.encryptor.encrypt(val.plaintext, ciphertext);
     }
 
@@ -25,17 +25,35 @@ public:
         return sp;
     }
 
+    inline auto &scale() noexcept {
+        return ciphertext.scale();
+    }
+
+    inline void rescale() {
+        evaluator->rescale_to_next_inplace(ciphertext);
+        level += 1;
+        rescale = false;
+    }
+
+    inline auto get_level() noexcept {
+        return level;
+    }
+
+    inline auto require_rescale() noexcept {
+        return rescale;
+    }
+
     SEALCiphertext& operator=(const SEALCiphertext &b);
-    SEALCiphertext operator+(const SEALCiphertext &b);
-    SEALCiphertext operator-(const SEALCiphertext &b);
-    SEALCiphertext operator*(const SEALCiphertext &b);
+    SEALCiphertext operator+(SEALCiphertext &b);
+    SEALCiphertext operator-(SEALCiphertext &b);
+    SEALCiphertext operator*(SEALCiphertext &b);
     SEALCiphertext operator+(const SEALPlaintext &b);
     SEALCiphertext operator-(const SEALPlaintext &b);
     SEALCiphertext operator*(const SEALPlaintext &b);
 
-    SEALCiphertext& operator+=(const SEALCiphertext &b);
-    SEALCiphertext& operator-=(const SEALCiphertext &b);
-    SEALCiphertext& operator*=(const SEALCiphertext &b);
+    SEALCiphertext& operator+=(SEALCiphertext &b);
+    SEALCiphertext& operator-=(SEALCiphertext &b);
+    SEALCiphertext& operator*=(SEALCiphertext &b);
     SEALCiphertext& operator+=(const SEALPlaintext &b);
     SEALCiphertext& operator-=(const SEALPlaintext &b);
     SEALCiphertext& operator*=(const SEALPlaintext &b);
@@ -43,6 +61,9 @@ public:
 private:
     Ciphertext ciphertext;
     std::shared_ptr<Evaluator> evaluator;
+    std::shared_ptr<RelinKeys> relin_keys;
+    int level; // how many times it has rescaled
+    bool rescale; // we adopt lazy rescale, which means we rescale for this operation on next time
 };
 
 } // namespace hewrapper

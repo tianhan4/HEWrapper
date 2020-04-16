@@ -16,12 +16,14 @@ public:
     ~SEALEncryptor() = default;
 
     explicit SEALEncryptor(std::shared_ptr<SEALCtx> ctx)
-    : encryptor(ctx->context, ctx->get_public_key()),
-      evaluator(std::make_shared<Evaluator>(ctx->context)) {}
+    : encryptor(ctx->context, *(ctx->get_public_key())),
+      evaluator(std::make_shared<Evaluator>(ctx->context)),
+      relin_keys(ctx->get_relin_keys()) {}
 
 protected:
     Encryptor encryptor;
     std::shared_ptr<Evaluator> evaluator;
+    std::shared_ptr<RelinKeys> relin_keys;
 
 private:
     SEALEncryptor() = default;
@@ -34,7 +36,7 @@ public:
     ~SEALDecryptor() = default;
 
     explicit SEALDecryptor(std::shared_ptr<SEALCtx> ctx)
-    : decryptor(ctx->context, ctx->get_secret_key()) {}
+    : decryptor(ctx->context, *(ctx->get_secret_key())) {}
 
 protected:
     Decryptor decryptor;

@@ -3,6 +3,11 @@
 #include <memory>
 #include <vector>
 #include <seal/seal.h>
+#include "HEBase.h
+// include here, so that users can only include this file
+#include "SEALHE.h"
+#include "SEALKey.h"
+#include "SEALText.h"
 
 using namespace seal;
 
@@ -20,9 +25,11 @@ enum class seal_scheme : std::uint8_t {
     CKKS = 0x2
 };
 
-class SEALEncryptionParameters {
+class SEALEncryptionParameters : public EncryptionParametersBase {
 public:
     friend class SEALCtx;
+
+    EncryptionParametersBase() = delete;
 
     explicit SEALEncryptionParameters(seal_scheme sc = seal_scheme::none)
     : parms(static_cast<std::uint8_t>(sc)) {}
@@ -52,15 +59,15 @@ public:
     }
 
     inline auto get_public_key() {
-        return *public_key;
+        return public_key;
     }
 
     inline auto get_secret_key() {
-        return *secret_key;
+        return secret_key;
     }
 
     inline auto get_relin_keys() {
-        return *relin_keys;
+        return relin_keys;
     }
 
 protected:
@@ -91,5 +98,59 @@ private:
     std::shared_ptr<const SecretKey> secret_key;
     std::shared_ptr<RelinKeys> relin_keys;
 }; // class SEALCtx
+
+class SEALWrapper {
+public:
+    SEALWrapper(): ctx(NULL), encoder(NULL), encryptor(NULL), decryptor(NULL) {}
+
+    void init(const SEALEncryptionParameters &parms);
+
+    template<typename T, typename = std::enable_if_t<
+            std::is_same<std::remove_cv_t<T>, double>::value ||
+            std::is_same<std::remove_cv_t<T>, std::complex<double>>::value>>
+    inline void encode(const std::vector<T> &values, double scale, SEALPlaintext &destination) {
+        encoder->encode(values, scale, destination);
+    }
+
+    template<typename T, typename = std::enable_if_t<
+            std::is_same<std::remove_cv_t<T>, double>::value ||
+            std::is_same<std::remove_cv_t<T>, std::complex<double>>::value>>
+    inline void encode(const std::vector<T> &values, double scale, SEALPlaintext &destination) {
+        encoder->encode(values, scale, destination);
+    }
+
+    inline void encode(double value, double scale, SEALPlaintext &destination) {
+        encoder->encode(value, scale, destination);
+    }
+
+    inline void encode(std::int64_t value, SEALPlaintext &destination) {
+        encoder->encode(value, destination);
+    }
+
+    template<typename T, typename = std::enable_if_t<
+            std::is_same<std::remove_cv_t<T>, double>::value ||
+            std::is_same<std::remove_cv_t<T>, std::complex<double>>::value>>
+    inline void decode(const SEALPlaintext &plain, std::vector<T> &destination) {
+        encoder->decode(plain, destination);
+    }
+
+    inline std::size_t slot_count() const noexcept {
+        return encode->slot_count();
+    }
+
+    inline std::shared_ptr<SEALEncryptor> get_encryptor() noexcept {
+        return encryptor;
+    }
+
+    inline std::shared_ptr<SEALDecryptor> get_decryptor() noexcept {
+        return decryptor;
+    }
+
+private:
+    std::shared_ptr<SEALCtx> ctx;
+    std::shared_ptr<SEALCKKSEncoder> encoder;
+    std::shared_ptr<SEALEncryptor> encryptor;
+    std::shared_ptr<SEALDecryptor> decryptor
+};
 
 } // namespace hewrapper

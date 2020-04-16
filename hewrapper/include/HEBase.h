@@ -5,6 +5,12 @@
 
 namespace hewrapper {
 
+class EncryptionParametersBase {
+public:
+    EncryptionParametersBase() = default;
+    ~EncryptionParametersBase();
+};
+
 class HEBase {
 public:
     HEBase() = default;
