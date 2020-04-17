@@ -8,7 +8,7 @@ This wrapper lets user to seamlessly use homomorphic encryption(HE) library, wit
 git clone https://github.com/HydraZeng/HEWrapper.git
 git submodule update --init --recursive
 ````
-The following command run under `HEWrapper/src`.
+The following command run under `HEWrapper/hewrapper`.
 
 2. build HEWrapper lib
 ```bash
