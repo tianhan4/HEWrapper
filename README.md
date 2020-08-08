@@ -5,7 +5,7 @@ This wrapper lets user to seamlessly use homomorphic encryption(HE) library, wit
 ### How to use it
 1. clone this repo and third party (SEAL)
 ```bash
-git clone https://github.com/HydraZeng/HEWrapper.git
+git clone https://github.com/tianhan4/HEWrapper.git
 git submodule update --init --recursive
 ````
 The following command run under `HEWrapper/hewrapper`.
