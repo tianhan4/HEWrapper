@@ -1,38 +1,117 @@
-#include "test.h"
-#include "sealwrapper/SEAL.h"
+
+#include <cstddef>
+#include <iostream>
+#include <fstream>
+#include <iomanip>
+#include <vector>
+#include <string>
+#include <chrono>
+#include <random>
+#include <thread>
+#include <mutex>
+#include <memory>
+#include <limits>
+#include <algorithm>
+#include <numeric>
+#include <cmath>
+#include "SEALEngine.h"
+#include "SEALHE.h"
+
+/*
+Helper function: Prints a vector of floating-point values.
+*/
 
 using namespace std;
 using namespace hewrapper;
 
 // Change for other encryption wrappers
 typedef SEALEncryptionParameters HWEncryptionParameters;
-typedef SEALWrapper HWWrapper;
+typedef SEALEngine HWWrapper;
 typedef SEALPlaintext HWPlaintext;
 typedef SEALCiphertext HWCiphertext;
 
-/*
-    This example follows seal example
-    https://github.com/microsoft/SEAL/blob/master/native/examples/4_ckks_basics.cpp
+template<typename T>
+inline void print_vector(std::vector<T> vec, size_t print_size = 4, int prec = 3)
+{
+    /*
+    Save the formatting information for std::cout.
+    */
+    std::ios old_fmt(nullptr);
+    old_fmt.copyfmt(std::cout);
+
+    size_t slot_count = vec.size();
+
+    std::cout << std::fixed << std::setprecision(prec);
+    std::cout << std::endl;
+    if(slot_count <= 2 * print_size)
+    {
+        std::cout << "    [";
+        for (size_t i = 0; i < slot_count; i++)
+        {
+            std::cout << " " << vec[i] << ((i != slot_count - 1) ? "," : " ]\n");
+        }
+    }
+    else
+    {
+        vec.resize(std::max(vec.size(), 2 * print_size));
+        std::cout << "    [";
+        for (size_t i = 0; i < print_size; i++)
+        {
+            std::cout << " " << vec[i] << ",";
+        }
+        if(vec.size() > 2 * print_size)
+        {
+            std::cout << " ...,";
+        }
+        for (size_t i = slot_count - print_size; i < slot_count; i++)
+        {
+            std::cout << " " << vec[i] << ((i != slot_count - 1) ? "," : " ]\n");
+        }
+    }
+    std::cout << std::endl;
+
+    /*
+    Restore the old std::cout formatting.
+    */
+    std::cout.copyfmt(old_fmt);
+}
+
+inline void print_line(int line_number)
+{
+    std::cout << "Line " << std::setw(3) << line_number << " --> ";
+}
+
+
+/* 1. basic operation: add, multiply, decode, enncode, encrypt, decrypt/
+ * 2. lazy_mode accelerate it.
+ * 3. vector inner product
+ * 4. activation function: client help
+ *
 */
 void example_ckks_basics() {
-    cout << "ckks demo" << endl;
+    
+    chrono::high_resolution_clock::time_point time_start, timeend;
 
-    HWEncryptionParameters parms(seal_scheme::CKKS);
+    cout << "ckks test" << endl;
     size_t poly_modulus_degree = 8192;
-    parms.set_poly_modulus_degree(poly_modulus_degree);
-    parms.set_coeff_modulus(poly_modulus_degree, { 60, 40, 40, 60 });
-
-    HWWrapper wrapper;
-    wrapper.init(parms);
-    auto decryptor = wrapper.get_decryptor();
-    auto encryptor = wrapper.get_encryptor();
-
-    size_t slot_count = wrapper.slot_count();
+    std::vector<int> coeff_modulus = {60, 40, 40, 60};
+    HWEncryptionParameters parms(poly_modulus_degree,
+                    coeff_modulus,
+                    seal_scheme::CKKS);
+    std::shared_ptr<HWWrapper> engine = make_shared<HWWrapper>();
+    engine->init(parms, false);
+    size_t slot_count = engine->slot_count();
     double scale = pow(2.0, 40);
-
+    cout <<"Poly modulus degree: " << poly_modulus_degree<< endl;
+    cout << "Coefficient modulus: ";
+    print_vector<int>(coeff_modulus, coeff_modulus.size());
+    cout << endl;
+    cout << "slot count: " << slot_count<< endl;
+    cout << "scale: " << scale << endl;
+    
+    
     // Preapre raw data
     vector<double> input;
-    input.reserve(slot_count);
     double curr_point = 0;
     double step_size = 1.0 / (static_cast<double>(slot_count) - 1);
     for (size_t i = 0; i < slot_count; i++, curr_point += step_size)
@@ -42,76 +121,55 @@ void example_ckks_basics() {
     cout << "Input vector: " << endl;
     print_vector(input, 3, 7);
 
-    cout << "Evaluating polynomial PI*x^3 + 0.4x + 1 ..." << endl;
+    //basics: calculate 2x^2+3x-9
     // Prepare the text
-    HWPlaintext plain_coeff3, plain_coeff1, plain_coeff0;
-    wrapper.encode(3.14159265, scale, plain_coeff3);
-    wrapper.encode(0.4, scale, plain_coeff1);
-    wrapper.encode(1.0, scale, plain_coeff0);
-
-    HWPlaintext x_plain;
-    print_line(__LINE__);
+    HWPlaintext plain_coeff2(engine), plain_coeff1(engine), plain_coeff0(engine);
+    engine->encode(2, scale, plain_coeff0);
+    engine->encode(3, scale, plain_coeff1);
+    engine->encode(-9, scale, plain_coeff2);
+    
+    HWPlaintext x_plain(engine);
     cout << "Encode input vectors." << endl;
-    wrapper.encode(input, scale, x_plain);
+    engine->encode(input, scale, x_plain);
 
-    HWCiphertext x1_encrypted(*encryptor, x_plain);
+    HWCiphertext x1_encrypted(engine);
+    cout << "Encrypt input vectors." << endl;
+    engine->encode(input, scale, x_plain);
+    engine->encrypt(x_plain, x1_encrypted);
 
-    print_line(__LINE__);
-    cout << "Compute x^2 and relinearize:" << endl;
-    HWCiphertext x3_encrypted = x1_encrypted * x1_encrypted;
+    cout << "Compute x^2" << endl;
+    HWCiphertext x2_encrypted(engine);
+    seal_square(x1_encrypted, x2_encrypted);
 
-    cout << "    + Scale of x^2 before rescale (due to lazy rescale): " << log2(x3_encrypted.scale())
-        << " bits" << endl;
+    cout << "Compute 2x^2:" << endl;
+    seal_multiply_inplace(x2_encrypted, plain_coeff0);
 
-    print_line(__LINE__);
-    cout << "Compute and rescale PI*x." << endl;
-    HWCiphertext x1_encrypted_coeff3 = x1_encrypted * plain_coeff3;
+    cout << "Compute 3x:" << endl;
+    seal_multiply_inplace(x1_encrypted, plain_coeff1);
 
-    cout << "    + Scale of PI*x before rescale (due to lazy rescale): " << log2(x1_encrypted_coeff3.scale())
-        << " bits" << endl;
-
-    print_line(__LINE__);
-    cout << "Compute, relinearize, and rescale (PI*x)*x^2." << endl;
-    x3_encrypted *= x1_encrypted_coeff3;
-    cout << "    + Scale of (PI*x)*x^2 before rescale (due to lazy rescale): " << log2(x3_encrypted.scale())
-        << " bits" << endl;
-
-    print_line(__LINE__);
-    cout << "Compute and rescale 0.4*x." << endl;
-    x1_encrypted *= plain_coeff1;
-    cout << "    + Scale of 0.4*x before rescale (due to lazy rescale): " << log2(x1_encrypted.scale())
-        << " bits" << endl;
+    cout << "    + Exact scale in 2x^2: " << log2(x2_encrypted.scale()) << endl;
+    cout << "    + Exact scale in 3x: " << log2(x1_encrypted.scale()) << endl;
+    cout << "    + Exact scale in -9: " << log2(plain_coeff2.scale()) << endl;
     cout << endl;
 
-    cout << "    + Exact scale in PI*x^3: " << x3_encrypted.scale() << endl;
-    cout << "    + Exact scale in  0.4*x: " << x1_encrypted.scale() << endl;
-    cout << "    + Exact scale in      1: " << plain_coeff0.scale() << endl;
-    cout << endl;
+    cout << "Compute 2x^2 + 3x" << endl;
+    seal_add_inplace(x2_encrypted, x1_encrypted);
+    cout << "Compute 2x^2 + 3x -9" << endl;
+    seal_add_inplace(x2_encrypted, plain_coeff2);
 
-    HWCiphertext encrypted_result = x3_encrypted + x1_encrypted;
-    cout << "    + Exact scale in PI*x^3 + 0.4*x: " << encrypted_result.scale() << endl;
-    cout << endl;
-
-    encrypted_result += plain_coeff0;
-
-    /*
-    First print the true result.
-    */
-    HWPlaintext plain_result;
-    print_line(__LINE__);
-    cout << "Decrypt and decode PI*x^3 + 0.4x + 1." << endl;
-    cout << "    + Expected result:" << endl;
+    HWPlaintext plain_result(engine);
     vector<double> true_result;
     for (size_t i = 0; i < input.size(); i++)
     {
         double x = input[i];
-        true_result.push_back((3.14159265 * x * x + 0.4)* x + 1);
+        true_result.push_back(2*pow(x,2) + 3*x - 9);
     }
     print_vector(true_result, 3, 7);
 
-    plain_result = encrypted_result.decrypt(*decryptor);
+    engine->decrypt(x2_encrypted, plain_result);
     vector<double> result;
-    wrapper.decode(plain_result, result);
+    
+    engine->decode(plain_result, result);
     cout << "    + Computed result ...... Correct." << endl;
     print_vector(result, 3, 7);
 }

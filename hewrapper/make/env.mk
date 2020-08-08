@@ -7,3 +7,4 @@ HW_LIB := libhw.a
 HW_LINK := hw
 
 SEAL_VER := 3.4
+export SEAL_VER

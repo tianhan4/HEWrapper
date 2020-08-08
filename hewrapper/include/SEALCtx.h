@@ -3,7 +3,6 @@
 #include <memory>
 #include <vector>
 #include <seal/seal.h>
-#include "HEBase.h"
 
 using namespace seal;
 
@@ -21,20 +20,17 @@ enum class seal_scheme : std::uint8_t {
     CKKS = 0x2
 };
 
-class SEALEncryptionParameters : public EncryptionParametersBase {
+class SEALEncryptionParameters{
 public:
     friend class SEALCtx;
 
     SEALEncryptionParameters() = delete;
 
-    explicit SEALEncryptionParameters(seal_scheme sc = seal_scheme::none)
-    : parms(static_cast<std::uint8_t>(sc)) {}
-
-    inline void set_poly_modulus_degree(std::size_t poly_modulus_degree) {
+    SEALEncryptionParameters(size_t poly_modulus_degree,
+                    std::vector<int> bit_sizes,
+                    seal_scheme sc = seal_scheme::none)
+    : parms(static_cast<std::uint8_t>(sc)) {
         parms.set_poly_modulus_degree(poly_modulus_degree);
-    }
-
-    inline void set_coeff_modulus(std::size_t poly_modulus_degree, std::vector<int> bit_sizes) {
         parms.set_coeff_modulus(CoeffModulus::Create(poly_modulus_degree, bit_sizes));
     }
 
@@ -44,10 +40,6 @@ protected:
 
 class SEALCtx {
 public:
-    friend class SEALEncryptor;
-    friend class SEALDecryptor;
-    friend class SEALCKKSEncoder;
-
     static std::shared_ptr<SEALCtx> Create(const SEALEncryptionParameters &parms) {
         return std::shared_ptr<SEALCtx>(
             new SEALCtx(SEALContext::Create(parms.parms))
@@ -66,8 +58,9 @@ public:
         return relin_keys;
     }
 
-protected:
-    std::shared_ptr<SEALContext> context;
+    inline std::shared_ptr<seal::SEALContext> get_sealcontext() const{
+        return context;
+    }
 
 private:
     SEALCtx(std::shared_ptr<SEALContext> ctx)
@@ -76,7 +69,7 @@ private:
      secret_key(NULL),
      relin_keys(NULL)
     {
-        KeyGenerator keygen(context);
+        seal::KeyGenerator keygen(context);
         public_key = std::make_shared<const PublicKey>(keygen.public_key());
         secret_key = std::make_shared<const SecretKey>(keygen.secret_key());
         relin_keys = std::make_shared<RelinKeys>(keygen.relin_keys());
@@ -90,6 +83,7 @@ private:
 
     SEALCtx &operator =(SEALCtx &&assign) = delete;
     
+    std::shared_ptr<seal::SEALContext> context;
     std::shared_ptr<const PublicKey> public_key;
     std::shared_ptr<const SecretKey> secret_key;
     std::shared_ptr<RelinKeys> relin_keys;

@@ -5,6 +5,7 @@
 all:
 	make clean
 	make lib
+	make test
 
 lib: $(HW_LIB)
 
