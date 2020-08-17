@@ -42,6 +42,12 @@ public:
     bool lazy_mode() const{
             return m_lazy_mode;
     }
+    bool &simple_mode(){
+            return m_simple_mode;
+    }
+    bool simple_mode() const{
+            return m_simple_mode;
+    }
 
 
     // 2.
@@ -90,6 +96,7 @@ public:
 
 
 private:
+    bool m_simple_mode = false;
     bool m_lazy_mode = false;
     std::shared_ptr<SEALCtx> ctx;
     std::shared_ptr<seal::CKKSEncoder> encoder;

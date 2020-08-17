@@ -43,6 +43,7 @@ public:
             return m_plaintext.scale();
     }
 
+
     SEALPlaintext(const SEALPlaintext &copy) = default;
     SEALPlaintext(SEALPlaintext &&copy) = default;
     SEALPlaintext& operator=(const SEALPlaintext &assign) = default;
@@ -51,6 +52,8 @@ private:
     size_t m_size;
     std::shared_ptr<hewrapper::SEALEngine> m_sealengine;
     seal::Plaintext m_plaintext;
+private:
+    
 };
 
 } // namespace hewrapper

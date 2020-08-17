@@ -81,6 +81,17 @@ inline void print_line(int line_number)
     std::cout << "Line " << std::setw(3) << line_number << " --> ";
 }
 
+/* 
+ * Test the average running time of basic operators.
+ *
+ *
+ */
+void performance_test(){
+
+    chrono::high_resolution_clock::time_point time_start, timeend;
+
+
+}
 
 /* 1. basic operation: add, multiply, decode, enncode, encrypt, decrypt/
  * 2. lazy_mode accelerate it.
@@ -90,7 +101,6 @@ inline void print_line(int line_number)
 */
 void example_ckks_basics() {
     
-    chrono::high_resolution_clock::time_point time_start, timeend;
 
     cout << "ckks test" << endl;
     size_t poly_modulus_degree = 8192;
@@ -134,8 +144,18 @@ void example_ckks_basics() {
 
     HWCiphertext x1_encrypted(engine);
     cout << "Encrypt input vectors." << endl;
-    engine->encode(input, scale, x_plain);
     engine->encrypt(x_plain, x1_encrypted);
+
+    // check add plain is element-wise add.
+    HWCiphertext x3_encrypted(engine);
+    HWPlaintext result_tmp(engine);
+    seal_add(x1_encrypted, x_plain, x3_encrypted);
+    engine->decrypt(x3_encrypted, result_tmp);
+    vector<double> output_tmp;
+    engine->decode(result_tmp, output_tmp);
+    cout << "add plain: " << endl;
+    print_vector(output_tmp, 3, 7);
+
 
     cout << "Compute x^2" << endl;
     HWCiphertext x2_encrypted(engine);
@@ -172,6 +192,186 @@ void example_ckks_basics() {
     engine->decode(plain_result, result);
     cout << "    + Computed result ...... Correct." << endl;
     print_vector(result, 3, 7);
+
+    chrono::high_resolution_clock::time_point time_start, time_end;
+    long long count = 10;
+
+    chrono::microseconds time_add(0);
+    chrono::microseconds time_add_inplace(0);
+    chrono::microseconds time_add_plain(0);
+    chrono::microseconds time_add_plain_inplace(0);
+    chrono::microseconds time_mul(0);
+    chrono::microseconds time_mul_inplace(0);
+    chrono::microseconds time_mul_plain(0);
+    
+    chrono::microseconds time_mul_plain_inplace(0);
+    chrono::microseconds time_square(0);
+    chrono::microseconds time_square_inplace(0);
+
+    chrono::microseconds time_scalar_add(0);
+    chrono::microseconds time_scalar_mul(0);
+    chrono::microseconds time_no_scalar_add(0);
+    chrono::microseconds time_no_scalar_mul(0);
+    chrono::microseconds time_scalar_add_inplace(0);
+    chrono::microseconds time_scalar_mul_inplace(0);
+    chrono::microseconds time_no_scalar_add_inplace(0);
+    chrono::microseconds time_no_scalar_mul_inplace(0);
+
+    cout << "Running pi*x and pi+x for" << count << " times." << endl;
+    for ( long long i = 0; i < count ; i ++){
+        {
+            HWPlaintext x_p(engine);
+            HWCiphertext x_c(engine);
+            HWPlaintext y_p(engine);
+            HWCiphertext y_c(engine);
+            engine->encode(input, scale, x_p);
+            engine->encode(input, scale, y_p);
+            engine->encrypt(x_p, x_c);
+            engine->encrypt(y_p, y_c);
+            time_start = chrono::high_resolution_clock::now();
+            seal_square_inplace(x_c);
+            time_end = chrono::high_resolution_clock::now();
+            time_square_inplace += chrono::duration_cast<chrono::microseconds>(time_end - time_start);
+        }
+        {
+            HWPlaintext x_p(engine);
+            HWCiphertext x_c(engine);
+            HWPlaintext y_p(engine);
+            HWCiphertext y_c(engine);
+            HWCiphertext z_c(engine);
+            engine->encode(input, scale, x_p);
+            engine->encode(input, scale, y_p);
+            engine->encrypt(x_p, x_c);
+            engine->encrypt(y_p, y_c);
+            time_start = chrono::high_resolution_clock::now();
+            seal_square(x_c, z_c);      
+            time_end = chrono::high_resolution_clock::now();
+            time_square += chrono::duration_cast<chrono::microseconds>(time_end - time_start);
+        }
+        /*
+        {
+            HWPlaintext x_p(engine);
+            HWCiphertext x_c(engine);
+            HWPlaintext y_p(engine);
+            HWCiphertext y_c(engine);
+            HWCiphertext z_c(engine);
+            engine->encode(input, scale, x_p);
+            engine->encode(input, scale, y_p);
+            engine->encrypt(x_p, x_c);
+            engine->encrypt(y_p, y_c);
+            time_start = chrono::high_resolution_clock::now();
+            time_end = chrono::high_resolution_clock::now();
+            time_ += chrono::duration_cast<chrono::microseconds>(time_end - time_start);
+        }
+        */
+
+        cout << "Test: Is scalar encoding faster?" << endl;
+        {
+            HWPlaintext x_p(engine);
+            HWCiphertext x_c(engine);
+            HWPlaintext y_p(engine);
+            HWCiphertext z_c(engine);
+            engine->encode(input, scale, x_p);
+            engine->encrypt(x_p, x_c);
+            time_start = chrono::high_resolution_clock::now();
+            seal_scalar_add(x_c, 1.1, z_c);
+            time_end = chrono::high_resolution_clock::now();
+            time_scalar_add += chrono::duration_cast<chrono::microseconds>(time_end - time_start);
+            
+            HWPlaintext plain_result(engine);
+            engine->decrypt(z_c, plain_result);
+            vector<double> result;
+            engine->decode(plain_result, result);
+            cout << "  Scalar adding 1.1:." << endl;
+            print_vector(result, 3, 7);
+
+        }
+
+        {
+            HWPlaintext x_p(engine);
+            HWCiphertext x_c(engine);
+            HWPlaintext y_p(engine);
+            HWCiphertext y_c(engine);
+            HWCiphertext z_c(engine);
+            engine->encode(input, scale, x_p);
+            engine->encrypt(x_p, x_c);
+            time_start = chrono::high_resolution_clock::now();
+            engine->encode(1.1, scale, y_p);
+            seal_add(x_c, y_p, z_c);
+            time_end = chrono::high_resolution_clock::now();
+            time_no_scalar_add += chrono::duration_cast<chrono::microseconds>(time_end - time_start);
+            HWPlaintext plain_result(engine);
+            engine->decrypt(z_c, plain_result);
+            vector<double> result;
+            engine->decode(plain_result, result);
+            cout << "  Non-scalar adding 1.1:." << endl;
+            print_vector(result, 3, 7);
+        }
+
+
+        {
+            HWPlaintext x_p(engine);
+            HWCiphertext x_c(engine);
+            HWPlaintext y_p(engine);
+            HWCiphertext z_c(engine);
+            engine->encode(input, scale, x_p);
+            engine->encrypt(x_p, x_c);
+            time_start = chrono::high_resolution_clock::now();
+            seal_scalar_multiply(x_c, 2, z_c);
+            time_end = chrono::high_resolution_clock::now();
+            time_scalar_mul += chrono::duration_cast<chrono::microseconds>(time_end - time_start);
+            
+            HWPlaintext plain_result(engine);
+            engine->decrypt(z_c, plain_result);
+            vector<double> result;
+            engine->decode(plain_result, result);
+            cout << "  Scalar multiply 2:" << endl;
+            print_vector(result, 3, 7);
+
+        }
+
+        {
+            HWPlaintext x_p(engine);
+            HWCiphertext x_c(engine);
+            HWPlaintext y_p(engine);
+            HWCiphertext y_c(engine);
+            HWCiphertext z_c(engine);
+            engine->encode(input, scale, x_p);
+            engine->encrypt(x_p, x_c);
+            time_start = chrono::high_resolution_clock::now();
+            engine->encode(2, scale, y_p);
+            seal_multiply(x_c, y_p, z_c);
+            time_end = chrono::high_resolution_clock::now();
+            time_no_scalar_mul += chrono::duration_cast<chrono::microseconds>(time_end - time_start);
+            HWPlaintext plain_result(engine);
+            engine->decrypt(z_c, plain_result);
+            vector<double> result;
+            engine->decode(plain_result, result);
+            cout << "  Non-scalar mul 2:." << endl;
+            print_vector(result, 3, 7);
+        }
+        // count << "Test 3: Is lazy rescale helpful?" << endl;
+
+
+    }
+    auto avg_square = time_square.count()/count;
+    auto avg_square_inplace = time_square_inplace.count()/count;
+
+    auto avg_scalar_add = time_scalar_add.count()/count;
+    auto avg_no_scalar_add = time_no_scalar_add.count()/count;
+    auto avg_scalar_mul = time_scalar_mul.count()/count;
+    auto avg_no_scalar_mul = time_no_scalar_mul.count()/count;
+
+
+
+    cout << "Avg square:" << avg_square << "ms" << endl;
+    cout << "Avg square inplace:" << avg_square_inplace << "ms" << endl;
+    cout << "Avg scalar add:" << avg_scalar_add << "ms" << endl;
+    cout << "Avg non-scalar add:" << avg_no_scalar_add << "ms" << endl;
+    cout << "Avg scalar mul:" << avg_scalar_mul << "ms" << endl;
+    cout << "Avg non-scalar mul:" << avg_no_scalar_mul << "ms" << endl;
+
+
 }
 
 int main() {

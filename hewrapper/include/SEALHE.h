@@ -2,11 +2,12 @@
 
 #include <cmath>
 #include <cassert>
-#include <seal/seal.h>
+#include "seal/seal.h"
 #include "SEALCtx.h"
 #include "SEALEngine.h"
 #include "CiphertextWrapper.h"
 #include "PlaintextWrapper.h"
+
 
 
 
@@ -37,5 +38,12 @@ namespace hewrapper{
 
     void seal_add(SEALCiphertext &arg0, SEALPlaintext &arg1, SEALCiphertext &out);
 
+    void seal_scalar_add(SEALCiphertext &arg0, double scalar, SEALCiphertext &out);
+
+    void seal_scalar_add_inplace(SEALCiphertext &arg0, double scalar);
+
+    void seal_scalar_multiply(SEALCiphertext &arg0, double scalar, SEALCiphertext &out, const seal::MemoryPoolHandle & pool = seal::MemoryManager::GetPool());
+
+    void seal_scalar_multiply_inplace(SEALCiphertext &arg0, double scalar, const seal::MemoryPoolHandle & pool = seal::MemoryManager::GetPool());
 }
     
