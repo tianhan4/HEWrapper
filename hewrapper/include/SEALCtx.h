@@ -46,16 +46,19 @@ public:
         );
     }
 
-    inline auto get_public_key() {
+    inline const auto get_public_key() {
         return public_key;
     }
 
-    inline auto get_secret_key() {
+    inline const auto get_secret_key() {
         return secret_key;
     }
 
-    inline auto get_relin_keys() {
+    inline const auto get_relin_keys() {
         return relin_keys;
+    }
+    inline const auto get_galois_keys() {
+        return galois_keys;
     }
 
     inline std::shared_ptr<seal::SEALContext> get_sealcontext() const{
@@ -64,15 +67,13 @@ public:
 
 private:
     SEALCtx(std::shared_ptr<SEALContext> ctx)
-    :context(ctx),
-     public_key(NULL),
-     secret_key(NULL),
-     relin_keys(NULL)
+    :context(ctx)
     {
         seal::KeyGenerator keygen(context);
         public_key = std::make_shared<const PublicKey>(keygen.public_key());
         secret_key = std::make_shared<const SecretKey>(keygen.secret_key());
         relin_keys = std::make_shared<RelinKeys>(keygen.relin_keys());
+        galois_keys = std::make_shared<GaloisKeys>(keygen.galois_keys());
     };
 
     SEALCtx(const SEALCtx &copy) = delete;
@@ -87,6 +88,7 @@ private:
     std::shared_ptr<const PublicKey> public_key;
     std::shared_ptr<const SecretKey> secret_key;
     std::shared_ptr<RelinKeys> relin_keys;
+    std::shared_ptr<GaloisKeys> galois_keys;
 }; // class SEALCtx
 
 } // namespace hewrapper

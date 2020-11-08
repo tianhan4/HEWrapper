@@ -9,10 +9,15 @@ class SEALEngine;
 
 class SEALPlaintext {
 public:
-    SEALPlaintext() = delete;
+    SEALPlaintext(){};
 
     SEALPlaintext(std::shared_ptr<SEALEngine> sealengine)
             :m_sealengine(sealengine){}
+
+    inline void init(std::shared_ptr<SEALEngine> sealengine){
+        this->m_sealengine = sealengine;
+    }
+
 
     SEALPlaintext(seal::Plaintext plaintext,
                     size_t size,

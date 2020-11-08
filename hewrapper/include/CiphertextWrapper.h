@@ -2,6 +2,7 @@
 #include <memory>
 #include <seal/seal.h>
 #include "SEALEngine.h"
+#include "PlaintextWrapper.h"
 
 using namespace seal;
 
@@ -9,9 +10,13 @@ namespace hewrapper {
 class SEALEngine;
 class SEALCiphertext{
 public:
-    SEALCiphertext() = delete;
+    SEALCiphertext(){};
 
-    SEALCiphertext( std::shared_ptr<SEALEngine> sealengine)
+   inline void init(std::shared_ptr<SEALEngine> sealengine){
+        this->m_sealengine = sealengine;
+    }
+ 
+    SEALCiphertext(std::shared_ptr<SEALEngine> sealengine)
     :m_sealengine(sealengine){}
 
     SEALCiphertext(seal::Ciphertext ciphertext, 
@@ -38,6 +43,14 @@ public:
             return m_ciphertext.scale();
     }
 
+    inline auto &clean(){
+        return m_clean;
+    }
+    inline auto clean() const{
+        return m_clean;
+    }
+
+
     //void save(pd::HEType& he_type) const;
 
     //static void load(SEALCiphertext& dst, const pb::HEType & he_type,
@@ -53,10 +66,21 @@ public:
     SEALCiphertext& operator=(SEALCiphertext &&assign) = default;
 
     bool rescale_required = false;
+    /*
+    SEALCiphertext & operator+=(const SEALCiphertext &b);
+    SEALCiphertext & operator+=(const SEALPlaintext &b);
+    SEALCiphertext & operator+=(double b);
+    SEALCiphertext & operator*=(const SEALCiphertext &b);
+    SEALCiphertext & operator*=(const SEALPlaintext &b);
+    SEALCiphertext & operator*=(double b);
+*/
+
 private:
     size_t m_size;
     std::shared_ptr<SEALEngine> m_sealengine;
     Ciphertext m_ciphertext;
+    //one-time for zero setting.
+    bool m_clean = false;
 };
 
 } // namespace hewrapper

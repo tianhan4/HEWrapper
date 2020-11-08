@@ -30,6 +30,7 @@ typedef SEALEngine HWWrapper;
 typedef SEALPlaintext HWPlaintext;
 typedef SEALCiphertext HWCiphertext;
 
+
 template<typename T>
 inline void print_vector(std::vector<T> vec, size_t print_size = 4, int prec = 3)
 {
@@ -162,10 +163,10 @@ void example_ckks_basics() {
     seal_square(x1_encrypted, x2_encrypted);
 
     cout << "Compute 2x^2:" << endl;
-    seal_multiply_inplace(x2_encrypted, plain_coeff0);
+    seal_multiply_inplace(x2_encrypted, 2);
 
     cout << "Compute 3x:" << endl;
-    seal_multiply_inplace(x1_encrypted, plain_coeff1);
+    seal_multiply_inplace(x1_encrypted, 3);
 
     cout << "    + Exact scale in 2x^2: " << log2(x2_encrypted.scale()) << endl;
     cout << "    + Exact scale in 3x: " << log2(x1_encrypted.scale()) << endl;
@@ -175,7 +176,7 @@ void example_ckks_basics() {
     cout << "Compute 2x^2 + 3x" << endl;
     seal_add_inplace(x2_encrypted, x1_encrypted);
     cout << "Compute 2x^2 + 3x -9" << endl;
-    seal_add_inplace(x2_encrypted, plain_coeff2);
+    seal_add_inplace(x2_encrypted, -9);
 
     HWPlaintext plain_result(engine);
     vector<double> true_result;
@@ -274,7 +275,7 @@ void example_ckks_basics() {
             engine->encode(input, scale, x_p);
             engine->encrypt(x_p, x_c);
             time_start = chrono::high_resolution_clock::now();
-            seal_scalar_add(x_c, 1.1, z_c);
+            seal_add(x_c, 1.1, z_c);
             time_end = chrono::high_resolution_clock::now();
             time_scalar_add += chrono::duration_cast<chrono::microseconds>(time_end - time_start);
             
@@ -286,17 +287,19 @@ void example_ckks_basics() {
             print_vector(result, 3, 7);
 
         }
-
+        
+        
         {
             HWPlaintext x_p(engine);
             HWCiphertext x_c(engine);
             HWPlaintext y_p(engine);
             HWCiphertext y_c(engine);
             HWCiphertext z_c(engine);
+            vector<double> tmp(input.size(), 1.1);
             engine->encode(input, scale, x_p);
             engine->encrypt(x_p, x_c);
             time_start = chrono::high_resolution_clock::now();
-            engine->encode(1.1, scale, y_p);
+            engine->encode(tmp, scale, y_p);
             seal_add(x_c, y_p, z_c);
             time_end = chrono::high_resolution_clock::now();
             time_no_scalar_add += chrono::duration_cast<chrono::microseconds>(time_end - time_start);
@@ -307,7 +310,7 @@ void example_ckks_basics() {
             cout << "  Non-scalar adding 1.1:." << endl;
             print_vector(result, 3, 7);
         }
-
+        
 
         {
             HWPlaintext x_p(engine);
@@ -317,7 +320,7 @@ void example_ckks_basics() {
             engine->encode(input, scale, x_p);
             engine->encrypt(x_p, x_c);
             time_start = chrono::high_resolution_clock::now();
-            seal_scalar_multiply(x_c, 2, z_c);
+            seal_multiply(x_c, 2, z_c);
             time_end = chrono::high_resolution_clock::now();
             time_scalar_mul += chrono::duration_cast<chrono::microseconds>(time_end - time_start);
             
@@ -336,10 +339,11 @@ void example_ckks_basics() {
             HWPlaintext y_p(engine);
             HWCiphertext y_c(engine);
             HWCiphertext z_c(engine);
+            vector<double> tmp(input.size(), 2);
             engine->encode(input, scale, x_p);
             engine->encrypt(x_p, x_c);
             time_start = chrono::high_resolution_clock::now();
-            engine->encode(2, scale, y_p);
+            engine->encode(tmp, scale, y_p);
             seal_multiply(x_c, y_p, z_c);
             time_end = chrono::high_resolution_clock::now();
             time_no_scalar_mul += chrono::duration_cast<chrono::microseconds>(time_end - time_start);
