@@ -411,6 +411,8 @@ namespace hewrapper{
         if (arg0.clean() || arg1.clean()){
             out.clean() = true;
             return;
+        }else{
+            out.clean() = false;
         }
         if(engine->lazy_mode()){
                 _multiply_rescale(arg0, arg1, engine);
@@ -434,6 +436,8 @@ namespace hewrapper{
         if (arg0.clean()){
             out.clean() = true;
             return;
+        }else{
+            out.clean() = false;
         }
         if(engine->lazy_mode()){
                 _multiply_rescale(arg0, arg1, engine);
@@ -468,10 +472,10 @@ namespace hewrapper{
             arg0.clean() = true;
             return;
         }
-        if(scalar == 1.0){
+        if (arg0.clean()){
             return;
         }
-        if (arg0.clean()){
+        if(scalar == 1.0){
             return;
         }
         if(engine->lazy_mode()){
@@ -545,9 +549,10 @@ namespace hewrapper{
         std::shared_ptr<seal::SEALContext> context = engine->get_context()->get_sealcontext();
         if (arg1.clean()){
             return;
-        }
-        if (arg0.clean()){
+        } 
+        else if (arg0.clean()){
             arg0 = arg1;
+            arg0.clean() = false;
             return;
         }
         if(engine->lazy_mode())_add_rescale(arg0, arg1, engine);
@@ -562,6 +567,7 @@ namespace hewrapper{
         if (arg0.clean()){
             printf("some bad operation: seal_add_inplace better not use clean ciphertexts as arg0 when adding plaintext.\n");
             engine->encrypt(arg1, arg0);
+            //arg0.clean() = false;//no need
             return;
         }
         if(engine->lazy_mode())_add_rescale(arg0, arg1, engine);
@@ -573,14 +579,21 @@ namespace hewrapper{
     void seal_add(SEALCiphertext &arg0, SEALCiphertext &arg1, SEALCiphertext &out){
         std::shared_ptr<hewrapper::SEALEngine> engine = arg0.getSEALEngine();
         std::shared_ptr<seal::SEALContext> context = engine->get_context()->get_sealcontext();
-        if (arg1.clean()){
+        if (arg0.clean() && arg1.clean()) {
+            out.clean() = true;
+            return;
+        }
+        else if (!arg0.clean() && arg1.clean()){
             out = arg0;
+            out.clean() = false;
             return;
         }
-        if (arg0.clean()){
+        else if (arg0.clean() && !arg1.clean()){
             out = arg1;
+            out.clean() = false;
             return;
-        }
+        }else 
+            out.clean() = false;
         if(engine->lazy_mode())_add_rescale(arg0, arg1, engine);
         _check_mod_and_scale_and_size(arg0, arg1, engine, context);
         engine->get_evaluator()->add(arg0.ciphertext(), arg1.ciphertext(), out.ciphertext());
@@ -648,6 +661,7 @@ namespace hewrapper{
         }
         if (arg0.clean()){
             engine->get_evaluator()->negate(arg1.ciphertext(), arg0.ciphertext());
+            arg0.clean() = false;
             return;
         }
         if(engine->lazy_mode())_add_rescale(arg0, arg1, engine);
@@ -676,11 +690,13 @@ namespace hewrapper{
         std::shared_ptr<seal::SEALContext> context = engine->get_context()->get_sealcontext();
         if (arg1.clean()){
             out = arg0;
+            out.clean() = false;
             return;
         }
         if (arg0.clean()){
             out = arg1;
             engine->get_evaluator()->negate_inplace(out.ciphertext());
+            out.clean() = false;
             return;
         }
         if(engine->lazy_mode())_add_rescale(arg0, arg1, engine);
@@ -688,6 +704,7 @@ namespace hewrapper{
         engine->get_evaluator()->sub(arg0.ciphertext(), arg1.ciphertext(), out.ciphertext());
         out.rescale_required = arg0.rescale_required;
         out.size() = arg0.size()==1? arg1.size(): arg0.size();
+        out.clean() = false;
     }
 
     void seal_sub(SEALCiphertext &arg0, SEALPlaintext &arg1, SEALCiphertext &out){
@@ -704,6 +721,7 @@ namespace hewrapper{
         engine->get_evaluator()->sub_plain(arg0.ciphertext(), arg1.plaintext(), out.ciphertext());
         out.rescale_required = arg0.rescale_required;
         out.size() = arg0.size()==1? arg1.size(): arg0.size();
+        out.clean() = false;
     }
 
     void seal_sub(SEALCiphertext &arg0, double scalar, SEALCiphertext &out){
