@@ -72,8 +72,8 @@ private:
         seal::KeyGenerator keygen(context);
         public_key = std::make_shared<const PublicKey>(keygen.public_key());
         secret_key = std::make_shared<const SecretKey>(keygen.secret_key());
-        relin_keys = std::make_shared<RelinKeys>(keygen.relin_keys());
-        galois_keys = std::make_shared<GaloisKeys>(keygen.galois_keys());
+        relin_keys = std::make_shared<RelinKeys>(keygen.relin_keys_local());
+        galois_keys = std::make_shared<GaloisKeys>(keygen.galois_keys_local());
     };
 
     SEALCtx(const SEALCtx &copy) = delete;
