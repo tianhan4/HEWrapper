@@ -52,7 +52,10 @@ namespace hewrapper{
         SEALPlaintext plaintext(engine);
         engine->encode(mask, plaintext);
         seal_multiply_inplace(arg0, plaintext);
-
+        if(arg0.rescale_required){
+                engine->get_evaluator()->rescale_to_next_inplace(arg0.ciphertext());
+                arg0.rescale_required = false;
+        }
         // replicate
         seal::Ciphertext tmp = arg0.ciphertext();
         auto &galois_keys = hewrapperCtx->get_galois_keys();
@@ -552,6 +555,11 @@ namespace hewrapper{
     }
 
     void sum_vector(SEALCiphertext &arg0) {
+        std::shared_ptr<hewrapper::SEALEngine> engine = arg0.getSEALEngine();
+        if(arg0.rescale_required){
+                engine->get_evaluator()->rescale_to_next_inplace(arg0.ciphertext());
+                arg0.rescale_required = false;
+        }
         sum_vector(arg0, arg0.size());
         replicate_first_slot_inplace(arg0);
     }
