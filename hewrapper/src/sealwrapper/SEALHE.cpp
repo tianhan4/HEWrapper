@@ -1,5 +1,6 @@
 #include <iostream>
 #include "SEALHE.h"
+#include "SEALEngine.h"
 #include "CiphertextWrapper.h"
 #include "seal/util/polyarithsmallmod.h"
 #include "seal/util/uintarith.h"
@@ -150,7 +151,7 @@ namespace hewrapper{
         _match_scale(arg0, arg1);
         //match sizes
         if (arg1.size() == 1)
-            throw invalid_argument("no plaintext with size 1, please just use scalar encoding.");
+            //printf("Warning: no plaintext with size 1, please just use scalar encoding.");
         if (arg0.size() != arg1.size()) {
             if (arg0.size() == 1) {
                 //replicate_first_slot_inplace(arg0, arg1.size());
@@ -302,12 +303,6 @@ namespace hewrapper{
         if(engine->lazy_mode()){
                 _multiply_rescale(arg0, scalar, engine);
         }
-        auto& context_data = *context->get_context_data(arg0.ciphertext().parms_id());
-        auto& parms = context_data.parms();
-        auto& coeff_modulus = parms.coeff_modulus();
-        size_t coeff_count = parms.poly_modulus_degree();
-        size_t coeff_mod_count = coeff_modulus.size();
-        size_t encrypted_ntt_size = arg0.ciphertext().size();
 
         Plaintext plaintext;
         engine->get_encoder()->encode(scalar, engine->scale(), plaintext);
@@ -435,11 +430,6 @@ namespace hewrapper{
             engine->encrypt(plaintext, arg0);
             return;
         }
-        auto& context_data = *context->get_context_data(arg0.ciphertext().parms_id());
-        auto& parms = context_data.parms();
-        auto& coeff_modulus = parms.coeff_modulus();
-        size_t coeff_count = parms.poly_modulus_degree();
-        size_t coeff_mod_count = coeff_modulus.size();
 
         Plaintext plaintext;
         engine->get_encoder()->encode(scalar, engine->scale(), plaintext);

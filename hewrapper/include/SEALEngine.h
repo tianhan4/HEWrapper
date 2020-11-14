@@ -5,6 +5,7 @@
 #include "CiphertextWrapper.h"
 #include "PlaintextWrapper.h"
 using namespace std;
+using namespace hewrapper;
 
 namespace hewrapper {
 //*******************************************************************************
@@ -14,6 +15,7 @@ namespace hewrapper {
 //*******************************************************************************
 class SEALCiphertext;
 class SEALPlaintext;
+void seal_add(SEALCiphertext &arg0, SEALPlaintext &arg1, SEALCiphertext &out);
 template <typename T>
 void replicate_vector(std::vector<T>& vec, size_t final_size);
 
@@ -130,10 +132,17 @@ public:
     }
 
     inline void encrypt(SEALPlaintext &plaintext, SEALCiphertext& ciphertext){
-        encryptor->encrypt(plaintext.plaintext(), ciphertext.ciphertext());
-        ciphertext.clean() = false;
-        ciphertext.size() = plaintext.size();
-        ciphertext.init(shared_from_this());
+        if (zero && (&ciphertext!=zero)){
+            seal_add(*zero, plaintext, ciphertext);
+            ciphertext.clean() = false;
+            ciphertext.size() = plaintext.size();
+            ciphertext.init(shared_from_this());
+        }else{
+            encryptor->encrypt(plaintext.plaintext(), ciphertext.ciphertext());
+            ciphertext.clean() = false;
+            ciphertext.size() = plaintext.size();
+            ciphertext.init(shared_from_this());
+        }
     }
 
     inline void decrypt(SEALCiphertext &ciphertext, SEALPlaintext &plaintext){
@@ -148,7 +157,7 @@ public:
         plaintext.size() = ciphertext.size();
 }
 
-
+SEALCiphertext * zero;
 
 private:
     double m_standard_scale;
