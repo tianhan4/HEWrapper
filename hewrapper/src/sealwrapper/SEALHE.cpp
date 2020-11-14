@@ -10,7 +10,7 @@ using namespace std;
 namespace hewrapper{
 
 
-    static void _multiply_rescale(SEALCiphertext &arg0, 
+    inline static void _multiply_rescale(SEALCiphertext &arg0, 
                     double arg1,
                     std::shared_ptr<hewrapper::SEALEngine> engine){
         if(arg0.rescale_required){
@@ -19,7 +19,7 @@ namespace hewrapper{
         }
     }
 
-    static void _multiply_rescale(SEALCiphertext &arg0, 
+    inline static void _multiply_rescale(SEALCiphertext &arg0, 
                     SEALCiphertext &arg1,
                     std::shared_ptr<hewrapper::SEALEngine> engine){
         if(arg0.rescale_required){
@@ -32,7 +32,7 @@ namespace hewrapper{
         }
     }
 
-    static void _multiply_rescale(SEALCiphertext &arg0, 
+    inline static void _multiply_rescale(SEALCiphertext &arg0, 
                     SEALPlaintext &arg1,
                     std::shared_ptr<hewrapper::SEALEngine> engine){
         if(arg0.rescale_required){
@@ -150,10 +150,10 @@ namespace hewrapper{
         }
         _match_scale(arg0, arg1);
         //match sizes
-        if (arg1.size() == 1)
+        //if (arg1.size() == 1)
             //printf("Warning: no plaintext with size 1, please just use scalar encoding.");
         if (arg0.size() != arg1.size()) {
-            if (arg0.size() == 1) {
+            if (arg0.size() == 1 ||arg1.size() == 1  ) {
                 //replicate_first_slot_inplace(arg0, arg1.size());
             }else {
                 throw invalid_argument("can't add vectors of different sizes");
@@ -177,7 +177,7 @@ namespace hewrapper{
             arg0.rescale_required = true;
         }else
         {
-                engine->get_evaluator()->rescale_to_next_inplace(arg0.ciphertext());
+            engine->get_evaluator()->rescale_to_next_inplace(arg0.ciphertext());
         }
     }
 
@@ -194,9 +194,7 @@ namespace hewrapper{
             arg0.clean() = true;
             return;
         }
-        if(engine->lazy_mode()){
-                _multiply_rescale(arg0, arg1, engine);
-        }
+        _multiply_rescale(arg0, arg1, engine);
         _check_mod_and_scale_and_size(arg0, arg1, engine, context);
         engine->get_evaluator()->multiply_inplace(arg0.ciphertext(), arg1.ciphertext());
         engine->get_evaluator()->relinearize_inplace(arg0.ciphertext(), *(engine->get_context()->get_relin_keys()));
@@ -214,9 +212,7 @@ namespace hewrapper{
         if (arg0.clean()){
             return;
         }
-        if(engine->lazy_mode()){
                 _multiply_rescale(arg0, arg1, engine);
-        }
         _check_mod_and_scale_and_size(arg0, arg1, engine, context);
         engine->get_evaluator()->multiply_plain_inplace(arg0.ciphertext(), arg1.plaintext());
         if (engine->lazy_mode()){
@@ -236,9 +232,8 @@ namespace hewrapper{
         }else{
             out.clean() = false;
         }
-        if(engine->lazy_mode()){
                 _multiply_rescale(arg0, arg1, engine);
-        }
+
         _check_mod_and_scale_and_size(arg0, arg1, engine, context);
         engine->get_evaluator()->multiply(arg0.ciphertext(), arg1.ciphertext(), out.ciphertext());
         engine->get_evaluator()->relinearize_inplace(out.ciphertext(), *(engine->get_context()->get_relin_keys()));
@@ -261,9 +256,8 @@ namespace hewrapper{
         }else{
             out.clean() = false;
         }
-        if(engine->lazy_mode()){
                 _multiply_rescale(arg0, arg1, engine);
-        }
+        
         _check_mod_and_scale_and_size(arg0, arg1, engine, context);
         engine->get_evaluator()->multiply_plain(arg0.ciphertext(), arg1.plaintext(), out.ciphertext());
         if (engine->lazy_mode()){
@@ -300,10 +294,7 @@ namespace hewrapper{
         if(scalar == 1.0){
             return;
         }
-        if(engine->lazy_mode()){
-                _multiply_rescale(arg0, scalar, engine);
-        }
-
+        _multiply_rescale(arg0, scalar, engine);
         Plaintext plaintext;
         engine->get_encoder()->encode(scalar, engine->scale(), plaintext);
         engine->get_evaluator()->multiply_plain_inplace(arg0.ciphertext(), plaintext);
@@ -312,15 +303,15 @@ namespace hewrapper{
                 arg0.rescale_required = true;
         }else{
                 engine->get_evaluator()->rescale_to_next_inplace(arg0.ciphertext());
-                arg0.rescale_required = false;
         }
     }
 
 
-    void _add_rescale(SEALCiphertext &arg0, 
+    inline void _add_rescale(SEALCiphertext &arg0, 
                     SEALCiphertext &arg1,
                     std::shared_ptr<hewrapper::SEALEngine> engine){
         if(arg0.rescale_required && arg1.rescale_required){
+            cout << "no need to rescale" << endl;
             return;
         }
         if(arg0.rescale_required){
@@ -333,7 +324,7 @@ namespace hewrapper{
         }
     }
 
-    void _add_rescale(SEALCiphertext &arg0, 
+    inline void _add_rescale(SEALCiphertext &arg0, 
                     SEALPlaintext &arg1,
                     std::shared_ptr<hewrapper::SEALEngine> engine){
         if(arg0.rescale_required){
@@ -353,7 +344,7 @@ namespace hewrapper{
             arg0.clean() = false;
             return;
         }
-        if(engine->lazy_mode())_add_rescale(arg0, arg1, engine);
+        _add_rescale(arg0, arg1, engine);
         _check_mod_and_scale_and_size(arg0, arg1, engine, context);
         engine->get_evaluator()->add_inplace(arg0.ciphertext(), arg1.ciphertext());
         arg0.size() = arg0.size()==1? arg1.size() : arg0.size();
@@ -368,7 +359,7 @@ namespace hewrapper{
             //arg0.clean() = false;//no need
             return;
         }
-        if(engine->lazy_mode())_add_rescale(arg0, arg1, engine);
+        _add_rescale(arg0, arg1, engine);
         _check_mod_and_scale_and_size(arg0, arg1, engine, context);
         engine->get_evaluator()->add_plain_inplace(arg0.ciphertext(), arg1.plaintext());
         arg0.size() = arg0.size()==1? arg1.size() : arg0.size();
@@ -392,7 +383,7 @@ namespace hewrapper{
             return;
         }else 
             out.clean() = false;
-        if(engine->lazy_mode())_add_rescale(arg0, arg1, engine);
+        _add_rescale(arg0, arg1, engine);
         _check_mod_and_scale_and_size(arg0, arg1, engine, context);
         engine->get_evaluator()->add(arg0.ciphertext(), arg1.ciphertext(), out.ciphertext());
         out.rescale_required = arg0.rescale_required;
@@ -407,7 +398,7 @@ namespace hewrapper{
             engine->encrypt(arg1, out);
             return;
         }
-        if(engine->lazy_mode())_add_rescale(arg0, arg1, engine);
+        _add_rescale(arg0, arg1, engine);
         _check_mod_and_scale_and_size(arg0, arg1, engine, context);
         engine->get_evaluator()->add_plain(arg0.ciphertext(), arg1.plaintext(), out.ciphertext());
         out.rescale_required = arg0.rescale_required;
@@ -420,20 +411,12 @@ namespace hewrapper{
     }
 
     void seal_add_inplace(SEALCiphertext &arg0, double scalar){
+        if(scalar == 0)return;
         std::shared_ptr<hewrapper::SEALEngine> engine = arg0.getSEALEngine();
         std::shared_ptr<seal::SEALContext> context = engine->get_context()->get_sealcontext();
-        if(scalar == 0)return;
-        if (arg0.clean()){
-            printf("some bad operation: clean ciphertext with plaintext/scalar.\n");
-            SEALPlaintext plaintext(engine);
-            engine->encode(scalar, plaintext);
-            engine->encrypt(plaintext, arg0);
-            return;
-        }
-
-        Plaintext plaintext;
-        engine->get_encoder()->encode(scalar, engine->scale(), plaintext);
-        engine->get_evaluator()->add_plain_inplace(arg0.ciphertext(), plaintext);
+        SEALPlaintext plaintext;
+        engine->encode(scalar, plaintext);
+        seal_add_inplace(arg0, plaintext);
     }
 
 //copy from add, transform to sub.
@@ -449,7 +432,7 @@ namespace hewrapper{
             arg0.clean() = false;
             return;
         }
-        if(engine->lazy_mode())_add_rescale(arg0, arg1, engine);
+        _add_rescale(arg0, arg1, engine);
         _check_mod_and_scale_and_size(arg0, arg1, engine, context);
         engine->get_evaluator()->sub_inplace(arg0.ciphertext(), arg1.ciphertext());
         arg0.size() = arg0.size()==1? arg1.size() : arg0.size();
@@ -464,7 +447,7 @@ namespace hewrapper{
             engine->get_evaluator()->negate_inplace(arg0.ciphertext());
             return;
         }
-        if(engine->lazy_mode())_add_rescale(arg0, arg1, engine);
+        _add_rescale(arg0, arg1, engine);
         _check_mod_and_scale_and_size(arg0, arg1, engine, context);
         engine->get_evaluator()->sub_plain_inplace(arg0.ciphertext(), arg1.plaintext());
         arg0.size() = arg0.size()==1? arg1.size() : arg0.size();
@@ -484,7 +467,7 @@ namespace hewrapper{
             out.clean() = false;
             return;
         }
-        if(engine->lazy_mode())_add_rescale(arg0, arg1, engine);
+        _add_rescale(arg0, arg1, engine);
         _check_mod_and_scale_and_size(arg0, arg1, engine, context);
         engine->get_evaluator()->sub(arg0.ciphertext(), arg1.ciphertext(), out.ciphertext());
         out.rescale_required = arg0.rescale_required;
@@ -501,7 +484,7 @@ namespace hewrapper{
             engine->get_evaluator()->negate_inplace(out.ciphertext());
             return;
         }
-        if(engine->lazy_mode())_add_rescale(arg0, arg1, engine);
+        _add_rescale(arg0, arg1, engine);
         _check_mod_and_scale_and_size(arg0, arg1, engine, context);
         engine->get_evaluator()->sub_plain(arg0.ciphertext(), arg1.plaintext(), out.ciphertext());
         out.rescale_required = arg0.rescale_required;

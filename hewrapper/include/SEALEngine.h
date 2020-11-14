@@ -150,12 +150,12 @@ public:
             throw std::invalid_argument("why decrypt a clean ciphertext?");
         }
         //make sure no non-rescaled cophertexts going out.
-        if(this->lazy_mode() && ciphertext.rescale_required){
-            evaluator->rescale_to_next_inplace(ciphertext.ciphertext());
-        }
+        //if(this->lazy_mode() && ciphertext.rescale_required){
+        //    evaluator->rescale_to_next_inplace(ciphertext.ciphertext());
+        //}
         decryptor->decrypt(ciphertext.ciphertext(), plaintext.plaintext());
         plaintext.size() = ciphertext.size();
-}
+    }
 
 SEALCiphertext * zero;
 
