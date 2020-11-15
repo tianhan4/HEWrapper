@@ -35,7 +35,7 @@ public:
     }
 
 protected:
-    EncryptionParameters parms;
+    EncryptionParameters parms; 
 }; // class SEALEncryptionParameters
 
 class SEALCtx {
