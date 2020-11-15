@@ -42,8 +42,8 @@ class SEALCtx {
 public:
     static std::shared_ptr<SEALCtx> Create(const SEALEncryptionParameters &parms) {
         return std::shared_ptr<SEALCtx>(
-            new SEALCtx(SEALContext::Create(parms.parms))
-        );
+            new SEALCtx(std::make_shared<SEALContext>(parms.parms))
+        );  
     }
 
     inline const auto get_public_key() {
@@ -69,11 +69,14 @@ private:
     SEALCtx(std::shared_ptr<SEALContext> ctx)
     :context(ctx)
     {
-        seal::KeyGenerator keygen(context);
-        public_key = std::make_shared<const PublicKey>(keygen.public_key());
-        secret_key = std::make_shared<const SecretKey>(keygen.secret_key());
-        relin_keys = std::make_shared<RelinKeys>(keygen.relin_keys_local());
-        galois_keys = std::make_shared<GaloisKeys>(keygen.galois_keys_local());
+    KeyGenerator keygen(*context);
+    secret_key = std::make_shared<SecretKey>(keygen.secret_key());
+    public_key = std::make_shared<PublicKey>();
+    keygen.create_public_key(*public_key);
+    relin_keys = std::make_shared<RelinKeys>();
+    keygen.create_relin_keys(*relin_keys);
+    galois_keys = std::make_shared<GaloisKeys>();
+    keygen.create_galois_keys(*galois_keys);
     };
 
     SEALCtx(const SEALCtx &copy) = delete;
@@ -85,8 +88,8 @@ private:
     SEALCtx &operator =(SEALCtx &&assign) = delete;
     
     std::shared_ptr<seal::SEALContext> context;
-    std::shared_ptr<const PublicKey> public_key;
-    std::shared_ptr<const SecretKey> secret_key;
+    std::shared_ptr<PublicKey> public_key;
+    std::shared_ptr<SecretKey> secret_key;
     std::shared_ptr<RelinKeys> relin_keys;
     std::shared_ptr<GaloisKeys> galois_keys;
 }; // class SEALCtx

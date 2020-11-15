@@ -12,11 +12,11 @@ void SEALEngine::init(const SEALEncryptionParameters &parms, size_t standard_sca
     this->m_auto_mod_switch = auto_mod_switch;
     this->m_noise_mode = noise_mode;
     this->ctx = SEALCtx::Create(parms);
-    this->encoder = std::make_shared<seal::CKKSEncoder>(ctx->get_sealcontext());
-    this->encryptor = std::make_shared<seal::Encryptor>(ctx->get_sealcontext(),
+    this->encoder = std::make_shared<seal::CKKSEncoder>(*(ctx->get_sealcontext()));
+    this->encryptor = std::make_shared<seal::Encryptor>(*(ctx->get_sealcontext()),
                     *(ctx->get_public_key()));
-    this->decryptor = std::make_shared<seal::Decryptor>(ctx->get_sealcontext(),
+    this->decryptor = std::make_shared<seal::Decryptor>(*(ctx->get_sealcontext()),
                     *(ctx->get_secret_key()));
-    this->evaluator = std::make_shared<seal::Evaluator>(ctx->get_sealcontext());
+    this->evaluator = std::make_shared<seal::Evaluator>(*(ctx->get_sealcontext()));
     this->m_max_slot = this->encoder->slot_count();
 }
