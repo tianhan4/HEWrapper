@@ -314,7 +314,7 @@ namespace hewrapper{
                     SEALCiphertext &arg1,
                     std::shared_ptr<hewrapper::SEALEngine> engine){
         if(arg0.rescale_required && arg1.rescale_required){
-            cout << "no need to rescale" << endl;
+            //cout << "no need to rescale" << endl;
             return;
         }
         if(arg0.rescale_required){
