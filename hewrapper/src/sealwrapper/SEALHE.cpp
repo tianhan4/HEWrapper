@@ -99,8 +99,8 @@ namespace hewrapper{
         size_t chain_ind0 = context->get_context_data(arg0.ciphertext().parms_id())->chain_index();
         size_t chain_ind1 = context->get_context_data(arg1.ciphertext().parms_id())->chain_index();
         if (!(chain_ind0 == chain_ind1) && engine->auto_mod_switch()) {
-            printf("Warning: mod adjustment happens, some improvements required.\n");
-            cout << "arg0 level: " << chain_ind0 << ", arg1 level: " << chain_ind1 << endl;
+            //printf("Warning: mod adjustment happens, some improvements required.\n");
+            //cout << "arg0 level: " << chain_ind0 << ", arg1 level: " << chain_ind1 << endl;
             //assert(false);
             if (chain_ind0 < chain_ind1) {
                 auto arg0_parms_id = arg0.ciphertext().parms_id();
@@ -137,8 +137,8 @@ namespace hewrapper{
         size_t chain_ind0 = context->get_context_data(arg0.ciphertext().parms_id())->chain_index();
         size_t chain_ind1 = context->get_context_data(arg1.plaintext().parms_id())->chain_index();
         if (!(chain_ind0 == chain_ind1) && engine->auto_mod_switch()) {
-            printf("Warning: mod adjustment happens, some improvements required.\n");
-            cout << "arg0 level: " << chain_ind0 << ", arg1 level: " << chain_ind1 << endl;
+            //printf("Warning: mod adjustment happens, some improvements required.\n");
+            //cout << "arg0 level: " << chain_ind0 << ", arg1 level: " << chain_ind1 << endl;
             //assert(false);
             if (chain_ind0 < chain_ind1) {
                 auto arg0_parms_id = arg0.ciphertext().parms_id();
@@ -225,7 +225,7 @@ namespace hewrapper{
         }
         arg0.size() = arg0.size()==1? arg1.size() : arg0.size();
     }
-    
+
     void seal_multiply(SEALCiphertext &arg0, SEALCiphertext &arg1, SEALCiphertext &out){
         std::shared_ptr<hewrapper::SEALEngine> engine = arg0.getSEALEngine();
         std::shared_ptr<seal::SEALContext> context = engine->get_context()->get_sealcontext();

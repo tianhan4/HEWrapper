@@ -32,7 +32,14 @@ public:
             return m_size;
     }
 
+    inline auto parms_id() const{
+        return m_ciphertext.parms_id();
+    }
+
     inline seal::Ciphertext& ciphertext(){
+        return m_ciphertext;
+    }
+    inline const seal::Ciphertext& ciphertext() const{
         return m_ciphertext;
     }
     // only permit on-site modification.
