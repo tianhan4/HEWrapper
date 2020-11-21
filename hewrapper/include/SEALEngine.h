@@ -137,11 +137,15 @@ public:
             ciphertext.clean() = false;
             ciphertext.size() = plaintext.size();
             ciphertext.init(shared_from_this());
+            ciphertext.relinearize_required = false;
+            ciphertext.rescale_required = false;
         }else{
             encryptor->encrypt(plaintext.plaintext(), ciphertext.ciphertext());
             ciphertext.clean() = false;
             ciphertext.size() = plaintext.size();
             ciphertext.init(shared_from_this());
+            ciphertext.relinearize_required = false;
+            ciphertext.rescale_required = false;
         }
     }
 
@@ -153,11 +157,14 @@ public:
         //if(this->lazy_mode() && ciphertext.rescale_required){
         //    evaluator->rescale_to_next_inplace(ciphertext.ciphertext());
         //}
+        //if(this->lazy_mode() && ciphertext.relinearize_required){
+        //    evaluator->relinearize_inplace(ciphertext.ciphertext(), *(ctx->get_relin_keys()));
+        //}
         decryptor->decrypt(ciphertext.ciphertext(), plaintext.plaintext());
         plaintext.size() = ciphertext.size();
     }
 
-SEALCiphertext * zero;
+SEALCiphertext * zero = 0;
 
 private:
     double m_standard_scale;

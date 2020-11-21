@@ -20,13 +20,11 @@ namespace hewrapper{
 
     void seal_square(SEALCiphertext &arg0, SEALCiphertext &out);
 
-    void seal_multiply_inplace(SEALCiphertext &arg0, SEALCiphertext &arg1);
+    void seal_multiply_inplace(SEALCiphertext &arg0, SEALCiphertext &arg1, bool is_parameter = false);
 
     void seal_multiply_inplace(SEALCiphertext &arg0, SEALPlaintext &arg1);
-    
-    void seal_multiply(SEALCiphertext &arg0, const SEALCiphertext &arg1, SEALCiphertext &out);
 
-    void seal_multiply(SEALCiphertext &arg0, SEALCiphertext &arg1, SEALCiphertext &out);
+    void seal_multiply(SEALCiphertext &arg0, SEALCiphertext &arg1, SEALCiphertext &out, bool is_parameter = false);
 
     void seal_multiply(SEALCiphertext &arg0, SEALPlaintext &arg1, SEALCiphertext &out);
 

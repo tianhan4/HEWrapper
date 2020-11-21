@@ -73,6 +73,7 @@ public:
     SEALCiphertext& operator=(SEALCiphertext &&assign) = default;
 
     bool rescale_required = false;
+    bool relinearize_required = false;
     /*
     SEALCiphertext & operator+=(const SEALCiphertext &b);
     SEALCiphertext & operator+=(const SEALPlaintext &b);
