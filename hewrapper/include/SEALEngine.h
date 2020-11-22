@@ -49,6 +49,13 @@ public:
     bool const lazy_mode() const{
             return m_lazy_mode;
     }
+    
+    bool &lazy_relinearization(){
+            return m_lazy_relinearization_mode;
+    }
+    bool const lazy_relinearization() const{
+            return m_lazy_relinearization_mode;
+    }
     bool &simple_mode(){
             return m_simple_mode;
     }
@@ -171,6 +178,7 @@ private:
     size_t m_max_slot;
     bool m_simple_mode = false;
     bool m_lazy_mode;
+    bool m_lazy_relinearization_mode;
     bool m_auto_mod_switch;
     bool m_noise_mode;
 

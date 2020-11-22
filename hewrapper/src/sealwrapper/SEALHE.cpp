@@ -229,6 +229,7 @@ namespace hewrapper{
     void seal_multiply_inplace(SEALCiphertext &arg0, SEALCiphertext &arg1, bool is_parameter){
         std::shared_ptr<hewrapper::SEALEngine> engine = arg0.getSEALEngine();
         std::shared_ptr<seal::SEALContext> context = engine->get_context()->get_sealcontext();
+        if(!is_parameter && !engine->lazy_relinearization()) is_parameter = true;
         if (arg0.clean() || arg1.clean()){
             arg0.clean() = true;
             return;
@@ -281,6 +282,7 @@ namespace hewrapper{
     void seal_multiply(SEALCiphertext &arg0, SEALCiphertext &arg1, SEALCiphertext &out, bool is_parameter){
         std::shared_ptr<hewrapper::SEALEngine> engine = arg0.getSEALEngine();
         std::shared_ptr<seal::SEALContext> context = engine->get_context()->get_sealcontext();
+        if(!is_parameter && !engine->lazy_relinearization()) is_parameter = true;
         if (arg0.clean() || arg1.clean()){
             out.clean() = true;
             return;
