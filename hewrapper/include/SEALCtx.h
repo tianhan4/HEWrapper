@@ -3,8 +3,10 @@
 #include <memory>
 #include <vector>
 #include <seal/seal.h>
+#include <iostream>
 
 using namespace seal;
+using namespace std;
 
 namespace hewrapper {
 
@@ -24,7 +26,7 @@ class SEALEncryptionParameters{
 public:
     friend class SEALCtx;
 
-    SEALEncryptionParameters() = delete;
+    SEALEncryptionParameters(){};
 
     SEALEncryptionParameters(size_t poly_modulus_degree,
                     std::vector<int> bit_sizes,
@@ -40,9 +42,12 @@ protected:
 
 class SEALCtx {
 public:
+
+    SEALCtx(){};
+    
     static std::shared_ptr<SEALCtx> Create(const SEALEncryptionParameters &parms) {
         return std::shared_ptr<SEALCtx>(
-            new SEALCtx(std::make_shared<SEALContext>(parms.parms))
+            new SEALCtx(parms)
         );  
     }
 
@@ -65,18 +70,80 @@ public:
         return context;
     }
 
-private:
-    SEALCtx(std::shared_ptr<SEALContext> ctx)
-    :context(ctx)
+
+    
+    inline std::streamoff save(std::ostream &stream, bool is_rotate, bool is_decrypt)
     {
-    KeyGenerator keygen(*context);
-    secret_key = std::make_shared<SecretKey>(keygen.secret_key());
-    public_key = std::make_shared<PublicKey>();
-    keygen.create_public_key(*public_key);
-    relin_keys = std::make_shared<RelinKeys>();
-    keygen.create_relin_keys(*relin_keys);
-    galois_keys = std::make_shared<GaloisKeys>();
-    keygen.create_galois_keys(*galois_keys);
+        auto parm_save_size = this->m_parms.parms.save(stream);
+        
+        auto public_key_save_size = this->public_key->save(stream);
+        
+        auto relin_key_save_size = this->relin_keys->save(stream);
+        std::streamoff galois_key_save_size = 0L;
+        stream.write(reinterpret_cast<const char *>(&is_rotate), sizeof(is_rotate));
+        if(is_rotate){
+            galois_key_save_size = this->galois_keys->save(stream);
+        }
+        std::streamoff secret_key_save_size = 0L;
+        stream.write(reinterpret_cast<const char *>(&is_decrypt), sizeof(is_decrypt));
+        if(is_decrypt)
+            secret_key_save_size = this->secret_key->save(stream);
+        return parm_save_size
+        + public_key_save_size 
+        + relin_key_save_size
+        + galois_key_save_size 
+        + secret_key_save_size;
+    }
+
+    inline std::streamoff load(std::istream &stream){
+        bool is_rotate, is_decrypt;
+        secret_key = std::make_shared<SecretKey>();
+        public_key = std::make_shared<PublicKey>();
+        relin_keys = std::make_shared<RelinKeys>();
+        galois_keys = std::make_shared<GaloisKeys>();
+        auto parm_load_size = this->m_parms.parms.load(stream);
+        this->context = std::make_shared<SEALContext>(m_parms.parms);
+        auto public_key_load_size = this->public_key->load(*(this->context), stream);
+        
+        auto relin_key_load_size = this->relin_keys->load(*(this->context), stream);
+        std::streamoff galois_key_load_size = 0L;
+        std::streamoff secret_key_load_size = 0l;
+        stream.read(reinterpret_cast<char *>(&is_rotate), sizeof(is_rotate));
+        if(is_rotate){
+            galois_key_load_size = this->galois_keys->load(*(this->context), stream);
+        }
+        else
+        {
+            this->galois_keys = NULL;
+        }
+        
+        stream.read(reinterpret_cast<char *>(&is_decrypt), sizeof(is_decrypt));
+        if(is_decrypt){
+            secret_key_load_size = this->secret_key->load(*(this->context), stream);
+        }
+        else
+        {
+            this->secret_key = NULL;
+        }
+        return parm_load_size
+        + public_key_load_size 
+        + relin_key_load_size
+        + galois_key_load_size 
+        + secret_key_load_size;
+    }
+
+private:
+    SEALCtx(SEALEncryptionParameters parms):m_parms(parms)
+    {
+        context = std::make_shared<SEALContext>(parms.parms);
+        KeyGenerator keygen(*context);
+        secret_key = std::make_shared<SecretKey>(keygen.secret_key());
+        public_key = std::make_shared<PublicKey>();
+        keygen.create_public_key(*public_key);
+        relin_keys = std::make_shared<RelinKeys>();
+        keygen.create_relin_keys(*relin_keys);
+        galois_keys = std::make_shared<GaloisKeys>();
+        keygen.create_galois_keys(*galois_keys);
     };
 
     SEALCtx(const SEALCtx &copy) = delete;
@@ -87,6 +154,7 @@ private:
 
     SEALCtx &operator =(SEALCtx &&assign) = delete;
     
+    SEALEncryptionParameters m_parms;
     std::shared_ptr<seal::SEALContext> context;
     std::shared_ptr<PublicKey> public_key;
     std::shared_ptr<SecretKey> secret_key;

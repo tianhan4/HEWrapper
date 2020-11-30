@@ -6,13 +6,15 @@ SEAL_INCLUDE_DIR := ./include/SEAL-${SEAL_VER}
 CUR_DIR := $(shell pwd)
 
 INCLUDE_DIR := -I${SEAL_INCLUDE_DIR} -I../../include
-CFLAGS := -Wall -O2 -fPIC -std=c++17
+CFLAGS := -g -Wall -O2 -fPIC -std=c++17
 
 all: build
 
 build: clean lib/libseal.a
 	$(CC) $(CFLAGS) $(INCLUDE_DIR) -c -o sealengine.o SEALEngine.cpp
 	$(CC) $(CFLAGS) $(INCLUDE_DIR) -c -o sealhe.o SEALHE.cpp
+	$(CC) $(CFLAGS) $(INCLUDE_DIR) -c -o ciphertextwrapper.o CiphertextWrapper.cpp
+
 
 lib/libseal.a:
 	@cd $(SEAL_DIR); make clean; cmake . -DCMAKE_INSTALL_PREFIX=$(CUR_DIR); make -j4;  make install

@@ -57,11 +57,9 @@ public:
         return m_clean;
     }
 
+    std::streamoff save(std::ostream &stream);
 
-    //void save(pd::HEType& he_type) const;
-
-    //static void load(SEALCiphertext& dst, const pb::HEType & he_type,
-    //                std::shared_ptr<hewrapper::SEALEngine> sealengine);
+    void load(std::istream &stream, std::shared_ptr<SEALEngine> engine);
 
     inline const std::shared_ptr<SEALEngine> getSEALEngine() const{
             return m_sealengine;

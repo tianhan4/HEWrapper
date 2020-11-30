@@ -98,80 +98,25 @@ public:
             return std::make_shared<SEALPlaintext>(shared_from_this());
     }
 
+    void decode(SEALPlaintext &plaintext, std::vector<double> &destination);
 
-
-    inline void decode(SEALPlaintext &plaintext, std::vector<double> &destination){
-        int vector_size = plaintext.size();
-        encoder->decode(plaintext.plaintext(), destination);
-        destination.resize(vector_size);
-        //std::vector<double> sub(destination.cbegin(), destination.cbegin() + plaintext.size());
-        //return sub;
-    }
-
-    inline void encode(std::vector<double> &values, SEALPlaintext& plaintext){
-        encode(values, this->m_standard_scale, plaintext);
-        plaintext.init(shared_from_this());
-    }
+    void encode(std::vector<double> &values, SEALPlaintext& plaintext);
     
-    inline void encode(double value, SEALPlaintext& plaintext){
-        encode(value, this->m_standard_scale, plaintext);
-        plaintext.init(shared_from_this());
-    }
+    void encode(double value, SEALPlaintext& plaintext);
 
-    inline void encode(std::vector<double> &values, double scale, SEALPlaintext& plaintext){
-        plaintext.size() = values.size();
-        auto slot_count = encoder->slot_count();
-        if (values.size() > slot_count)
-                // number of slots available is poly_modulus_degree / 2
-                throw std::invalid_argument(
-                "can't encrypt vectors of this size, please use a larger "
-                "polynomial modulus degree.");
-        replicate_vector(values, slot_count);
-        encoder->encode(values, scale, plaintext.plaintext());
-        plaintext.init(shared_from_this());
-    }
+    void encode(std::vector<double> &values, double scale, SEALPlaintext& plaintext);
 
+    void encode(double value, double scale, SEALPlaintext& plaintext);
 
-    inline void encode(double value, double scale, SEALPlaintext& plaintext){
-        encoder->encode(value, scale, plaintext.plaintext());
-        plaintext.size() = 1;
-        plaintext.init(shared_from_this());
-    }
+    void encrypt(SEALPlaintext &plaintext, SEALCiphertext& ciphertext);
 
-    inline void encrypt(SEALPlaintext &plaintext, SEALCiphertext& ciphertext){
-        if (zero && (&ciphertext!=zero)){
-            seal_add(*zero, plaintext, ciphertext);
-            ciphertext.clean() = false;
-            ciphertext.size() = plaintext.size();
-            ciphertext.init(shared_from_this());
-            ciphertext.relinearize_required = false;
-            ciphertext.rescale_required = false;
-        }else{
-            encryptor->encrypt(plaintext.plaintext(), ciphertext.ciphertext());
-            ciphertext.clean() = false;
-            ciphertext.size() = plaintext.size();
-            ciphertext.init(shared_from_this());
-            ciphertext.relinearize_required = false;
-            ciphertext.rescale_required = false;
-        }
-    }
+    void decrypt(SEALCiphertext &ciphertext, SEALPlaintext &plaintext);
 
-    inline void decrypt(SEALCiphertext &ciphertext, SEALPlaintext &plaintext){
-        if(ciphertext.clean()){
-            throw std::invalid_argument("why decrypt a clean ciphertext?");
-        }
-        //make sure no non-rescaled cophertexts going out.
-        //if(this->lazy_mode() && ciphertext.rescale_required){
-        //    evaluator->rescale_to_next_inplace(ciphertext.ciphertext());
-        //}
-        //if(this->lazy_mode() && ciphertext.relinearize_required){
-        //    evaluator->relinearize_inplace(ciphertext.ciphertext(), *(ctx->get_relin_keys()));
-        //}
-        decryptor->decrypt(ciphertext.ciphertext(), plaintext.plaintext());
-        plaintext.size() = ciphertext.size();
-    }
+    std::streamoff save(std::ostream &stream, bool is_rotate, bool is_decrypt);
 
-SEALCiphertext * zero = 0;
+    std::streamoff load(std::istream &stream);
+
+    SEALCiphertext * zero = 0;
 
 private:
     double m_standard_scale;
