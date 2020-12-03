@@ -216,7 +216,7 @@ namespace hewrapper{
         }
 **/
     }
-    void seal_square(SEALCiphertext &arg0, SEALCiphertext &out){
+    void seal_square(const SEALCiphertext &arg0, SEALCiphertext &out){
         
 /**
             out = arg0;
@@ -267,7 +267,7 @@ namespace hewrapper{
         if (arg0.clean()){
             return;
         }
-                _multiply_rescale(arg0, arg1, engine);
+        _multiply_rescale(arg0, arg1, engine);
         _check_mod_and_scale_and_size(arg0, arg1, engine, context);
         engine->get_evaluator()->multiply_plain_inplace(arg0.ciphertext(), arg1.plaintext());
         if (engine->lazy_mode()){
@@ -279,9 +279,18 @@ namespace hewrapper{
         arg0.size() = arg0.size()==1? arg1.size() : arg0.size();
     }
 
-    void seal_multiply(SEALCiphertext &arg0, SEALCiphertext &arg1, SEALCiphertext &out, bool is_parameter){
+    void seal_multiply(const SEALCiphertext &arg0, SEALCiphertext &arg1, SEALCiphertext &out, bool is_parameter){
+        out = arg0;
+        seal_multiply_inplace(out, arg1, is_parameter);
+
+        /**
         std::shared_ptr<hewrapper::SEALEngine> engine = arg0.getSEALEngine();
         std::shared_ptr<seal::SEALContext> context = engine->get_context()->get_sealcontext();
+
+        out = arg0;
+        seal_multiply_inplace(out, arg1);
+
+
         if(!is_parameter && !engine->lazy_relinearization()) is_parameter = true;
         if (arg0.clean() || arg1.clean()){
             out.clean() = true;
@@ -314,9 +323,13 @@ namespace hewrapper{
             }
         }
         out.size() = arg0.size()==1? arg1.size(): arg0.size();
+        **/
     }
 
-    void seal_multiply(SEALCiphertext &arg0, SEALPlaintext &arg1, SEALCiphertext &out){
+    void seal_multiply(const SEALCiphertext &arg0, SEALPlaintext &arg1, SEALCiphertext &out){
+        out = arg0;
+        seal_multiply_inplace(out, arg1);
+        /**
         std::shared_ptr<hewrapper::SEALEngine> engine = arg0.getSEALEngine();
         std::shared_ptr<seal::SEALContext> context = engine->get_context()->get_sealcontext();
         if (arg0.clean()){
@@ -336,11 +349,12 @@ namespace hewrapper{
                 out.rescale_required = false;
         }
         out.size() = arg0.size()==1? arg1.size(): arg0.size();
+        **/
     }
 
 
-    void seal_multiply(SEALCiphertext & arg0, double scalar, SEALCiphertext &out, const seal::MemoryPoolHandle& pool){
-        std::shared_ptr<hewrapper::SEALEngine> engine = arg0.getSEALEngine();
+    void seal_multiply(const SEALCiphertext & arg0, double scalar, SEALCiphertext &out, const seal::MemoryPoolHandle& pool){
+        //std::shared_ptr<hewrapper::SEALEngine> engine = arg0.getSEALEngine();
         //if(engine->simple_mode()){
         //    multiply_plain_simple_mod(arg0, scalar, out, engine, std::move(pool));
         //    cout << "finish mul" <<endl;
@@ -363,17 +377,9 @@ namespace hewrapper{
         if(scalar == 1.0){
             return;
         }
-        _multiply_rescale(arg0, scalar, engine);
-        Plaintext plaintext;
-        engine->get_encoder()->encode(scalar, engine->scale(), plaintext);
-        engine->get_evaluator()->multiply_plain_inplace(arg0.ciphertext(), plaintext);
-
-        if (engine->lazy_mode()){
-                arg0.rescale_required = true;
-        }else{
-                engine->get_evaluator()->rescale_to_next_inplace(arg0.ciphertext());
-                arg0.rescale_required = false;
-        }
+        SEALPlaintext plaintext;
+        engine->encode(scalar, engine->scale(), plaintext);
+        seal_multiply_inplace(arg0, plaintext);
     }
 
 
@@ -445,7 +451,10 @@ namespace hewrapper{
         arg0.size() = arg0.size()==1? arg1.size() : arg0.size();
     }
 
-    void seal_add(SEALCiphertext &arg0, SEALCiphertext &arg1, SEALCiphertext &out){
+    void seal_add(const SEALCiphertext &arg0, SEALCiphertext &arg1, SEALCiphertext &out){
+        out = arg0;
+        seal_add_inplace(out, arg1);
+        /**
         std::shared_ptr<hewrapper::SEALEngine> engine = arg0.getSEALEngine();
         std::shared_ptr<seal::SEALContext> context = engine->get_context()->get_sealcontext();
         if (arg0.clean() && arg1.clean()) {
@@ -468,9 +477,13 @@ namespace hewrapper{
         engine->get_evaluator()->add(arg0.ciphertext(), arg1.ciphertext(), out.ciphertext());
         out.rescale_required = arg0.rescale_required;
         out.size() = arg0.size()==1? arg1.size(): arg0.size();
+        **/
     }
 
-    void seal_add(SEALCiphertext &arg0, SEALPlaintext &arg1, SEALCiphertext &out){
+    void seal_add(const SEALCiphertext &arg0, SEALPlaintext &arg1, SEALCiphertext &out){
+        out = arg0;
+        seal_add_inplace(out, arg1);
+        /**
         std::shared_ptr<hewrapper::SEALEngine> engine = arg0.getSEALEngine();
         std::shared_ptr<seal::SEALContext> context = engine->get_context()->get_sealcontext();
         if (arg0.clean()){
@@ -483,9 +496,10 @@ namespace hewrapper{
         engine->get_evaluator()->add_plain(arg0.ciphertext(), arg1.plaintext(), out.ciphertext());
         out.rescale_required = arg0.rescale_required;
         out.size() = arg0.size()==1? arg1.size(): arg0.size();
+        **/
     }
 
-    void seal_add(SEALCiphertext &arg0, double scalar, SEALCiphertext &out){
+    void seal_add(const SEALCiphertext &arg0, double scalar, SEALCiphertext &out){
         out = arg0;
         seal_add_inplace(out, scalar);
     }
@@ -493,7 +507,6 @@ namespace hewrapper{
     void seal_add_inplace(SEALCiphertext &arg0, double scalar){
         if(scalar == 0)return;
         std::shared_ptr<hewrapper::SEALEngine> engine = arg0.getSEALEngine();
-        std::shared_ptr<seal::SEALContext> context = engine->get_context()->get_sealcontext();
         SEALPlaintext plaintext;
         engine->encode(scalar, plaintext);
         seal_add_inplace(arg0, plaintext);
@@ -533,7 +546,10 @@ namespace hewrapper{
         arg0.size() = arg0.size()==1? arg1.size() : arg0.size();
     }
 
-    void seal_sub(SEALCiphertext &arg0, SEALCiphertext &arg1, SEALCiphertext &out){
+    void seal_sub(const SEALCiphertext &arg0, SEALCiphertext &arg1, SEALCiphertext &out){
+        out = arg0;
+        seal_sub_inplace(out, arg1);
+        /**
         std::shared_ptr<hewrapper::SEALEngine> engine = arg0.getSEALEngine();
         std::shared_ptr<seal::SEALContext> context = engine->get_context()->get_sealcontext();
         if (arg1.clean()){
@@ -552,10 +568,13 @@ namespace hewrapper{
         engine->get_evaluator()->sub(arg0.ciphertext(), arg1.ciphertext(), out.ciphertext());
         out.rescale_required = arg0.rescale_required;
         out.size() = arg0.size()==1? arg1.size(): arg0.size();
-        out.clean() = false;
+        out.clean() = false;**/
     }
 
-    void seal_sub(SEALCiphertext &arg0, SEALPlaintext &arg1, SEALCiphertext &out){
+    void seal_sub(const SEALCiphertext &arg0, SEALPlaintext &arg1, SEALCiphertext &out){
+        out = arg0;
+        seal_sub_inplace(out, arg1);
+        /**
         std::shared_ptr<hewrapper::SEALEngine> engine = arg0.getSEALEngine();
         std::shared_ptr<seal::SEALContext> context = engine->get_context()->get_sealcontext();
         if (arg0.clean()){
@@ -569,12 +588,11 @@ namespace hewrapper{
         engine->get_evaluator()->sub_plain(arg0.ciphertext(), arg1.plaintext(), out.ciphertext());
         out.rescale_required = arg0.rescale_required;
         out.size() = arg0.size()==1? arg1.size(): arg0.size();
-        out.clean() = false;
+        out.clean() = false;**/
     }
 
-    void seal_sub(SEALCiphertext &arg0, double scalar, SEALCiphertext &out){
+    void seal_sub(const SEALCiphertext &arg0, double scalar, SEALCiphertext &out){
         out = arg0;
-        if(scalar == 0)return;
         seal_sub_inplace(out, scalar);
     }
 

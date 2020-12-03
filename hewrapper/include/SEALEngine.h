@@ -15,7 +15,7 @@ namespace hewrapper {
 //*******************************************************************************
 class SEALCiphertext;
 class SEALPlaintext;
-void seal_add(SEALCiphertext &arg0, SEALPlaintext &arg1, SEALCiphertext &out);
+void seal_add(const SEALCiphertext &arg0, SEALPlaintext &arg1, SEALCiphertext &out);
 template <typename T>
 void replicate_vector(std::vector<T>& vec, size_t final_size);
 
