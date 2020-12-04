@@ -56,7 +56,7 @@ namespace hewrapper{
 
     void seal_sub_inplace(SEALCiphertext &arg0, double scalar);
 
-    void sum_vector(SEALCiphertext &arg0);
+    void sum_vector(SEALCiphertext &arg0, double coefficient = 1.0);
 
     
 }

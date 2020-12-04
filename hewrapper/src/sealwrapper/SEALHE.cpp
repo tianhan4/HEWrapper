@@ -58,14 +58,14 @@ namespace hewrapper{
         }
     }
 
-    static void replicate_first_slot_inplace(SEALCiphertext &arg0) {
+    static void replicate_first_slot_inplace(SEALCiphertext &arg0, double coefficient = 1.0) {
         std::shared_ptr<hewrapper::SEALEngine> engine = arg0.getSEALEngine();
         std::shared_ptr<hewrapper::SEALCtx> hewrapperCtx = engine->get_context();
         int max_slot = engine->max_slot();
         // mask
         int slot_count = arg0.getSEALEngine()->slot_count();
         vector<double> mask(arg0.size(), 0);
-        mask[0] = 1;
+        mask[0] = coefficient;
         SEALPlaintext plaintext(engine);
         engine->encode(mask, plaintext);
         seal_multiply_inplace(arg0, plaintext);
@@ -649,7 +649,7 @@ namespace hewrapper{
         }
     }
 
-    void sum_vector(SEALCiphertext &arg0) {
+    void sum_vector(SEALCiphertext &arg0, double coefficient) {
         std::shared_ptr<hewrapper::SEALEngine> engine = arg0.getSEALEngine();
         if(arg0.relinearize_required){
             engine->get_evaluator()->relinearize_inplace(arg0.ciphertext(), *(engine->get_context()->get_relin_keys()));
@@ -660,7 +660,7 @@ namespace hewrapper{
                 arg0.rescale_required = false;
         }
         sum_vector(arg0, arg0.size());
-        replicate_first_slot_inplace(arg0);
+        replicate_first_slot_inplace(arg0, coefficient);
     }
 
 
