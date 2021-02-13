@@ -16,9 +16,9 @@ namespace hewrapper{
      * check the modulus, if not match, match them.
      */
 
-    void seal_square_inplace(SEALCiphertext &arg0);
+    void seal_square_inplace(SEALCiphertext &arg0, bool is_parameter = false);
 
-    void seal_square(const SEALCiphertext &arg0, SEALCiphertext &out);
+    void seal_square(SEALCiphertext &arg0, SEALCiphertext &out, bool is_parameter = false);
 
     void seal_multiply_inplace(SEALCiphertext &arg0, SEALCiphertext &arg1, bool is_parameter = false);
 

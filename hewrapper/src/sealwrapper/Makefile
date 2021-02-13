@@ -6,7 +6,7 @@ SEAL_INCLUDE_DIR := ./include/SEAL-${SEAL_VER}
 CUR_DIR := $(shell pwd)
 
 INCLUDE_DIR := -I${SEAL_INCLUDE_DIR} -I../../include
-CFLAGS := -g -Wall -O2 -fPIC -std=c++17
+CFLAGS := -Wall -O2 -fPIC -std=c++17
 
 all: build
 

@@ -188,10 +188,10 @@ namespace hewrapper{
         }
     }
 
-    void seal_square_inplace(SEALCiphertext &arg0){
-/**
+    void seal_square_inplace(SEALCiphertext &arg0, bool is_parameter){
         std::shared_ptr<hewrapper::SEALEngine> engine = arg0.getSEALEngine();
         std::shared_ptr<seal::SEALContext> context = engine->get_context()->get_sealcontext();
+        if(!is_parameter && !engine->lazy_relinearization()) is_parameter = true;
         if(arg0.clean()){
             return;
         }
@@ -204,28 +204,36 @@ namespace hewrapper{
             arg0.rescale_required = false;
         }
         engine->get_evaluator()->square_inplace(arg0.ciphertext());
-        if(engine->lazy_mode()){
-            arg0.rescale_required = true;
-            arg0.relinearize_required = true;
-        }else
-        {
+        if(is_parameter){
             engine->get_evaluator()->relinearize_inplace(arg0.ciphertext(), *(engine->get_context()->get_relin_keys()));
-            engine->get_evaluator()->rescale_to_next_inplace(arg0.ciphertext());
-            arg0.relinearize_required = true;
-            arg0.rescale_required = true;
+            arg0.relinearize_required = false;
+            if (engine->lazy_mode()){
+                arg0.rescale_required = true;
+            }else{
+                engine->get_evaluator()->rescale_to_next_inplace(arg0.ciphertext());
+                arg0.rescale_required = false;
+            }
+        }else{
+            if (engine->lazy_mode()){
+                    arg0.rescale_required = true;
+                    arg0.relinearize_required = true;
+            }else{
+                engine->get_evaluator()->relinearize_inplace(arg0.ciphertext(), *(engine->get_context()->get_relin_keys()));
+                engine->get_evaluator()->rescale_to_next_inplace(arg0.ciphertext());
+                arg0.rescale_required = false;
+                arg0.relinearize_required = false;
+            }
         }
-**/
     }
-    void seal_square(const SEALCiphertext &arg0, SEALCiphertext &out){
-        
-/**
+
+    //this should be faster.
+    void seal_square(SEALCiphertext &arg0, SEALCiphertext &out, bool is_parameter){
             out = arg0;
-            seal_square_inplace(out);
-            **/
+            seal_multiply_inplace(out, arg0, is_parameter);
     }
 
 
-
+    // is_parameter: immediately relinearize.
     void seal_multiply_inplace(SEALCiphertext &arg0, SEALCiphertext &arg1, bool is_parameter){
         std::shared_ptr<hewrapper::SEALEngine> engine = arg0.getSEALEngine();
         std::shared_ptr<seal::SEALContext> context = engine->get_context()->get_sealcontext();

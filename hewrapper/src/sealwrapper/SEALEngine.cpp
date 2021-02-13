@@ -59,6 +59,7 @@ namespace hewrapper{
 
     void SEALEngine::encrypt(SEALPlaintext &plaintext, SEALCiphertext& ciphertext){
         if (zero && (&ciphertext!=zero)){
+            //cout << "zero!" << endl;
             seal_add(*zero, plaintext, ciphertext);
             ciphertext.clean() = false;
             ciphertext.size() = plaintext.size();
@@ -66,6 +67,7 @@ namespace hewrapper{
             ciphertext.relinearize_required = false;
             ciphertext.rescale_required = false;
         }else{
+            //cout <<" non zero!" << endl;
             encryptor->encrypt(plaintext.plaintext(), ciphertext.ciphertext());
             ciphertext.clean() = false;
             ciphertext.size() = plaintext.size();
@@ -80,6 +82,8 @@ namespace hewrapper{
             throw std::invalid_argument("why decrypt a clean ciphertext?");
         }
         //make sure no non-rescaled cophertexts going out.
+        //why comment this?
+        //Because we assume all decrypt plaintext will not be encrypted directly again.
         //if(this->lazy_mode() && ciphertext.rescale_required){
         //    evaluator->rescale_to_next_inplace(ciphertext.ciphertext());
         //}
