@@ -17,11 +17,12 @@ using namespace hewrapper;
         stream.write(reinterpret_cast<const char *>(&this->relinearize_required), sizeof(this->relinearize_required));
         stream.write(reinterpret_cast<const char *>(&this->m_size), sizeof(this->m_size));
         stream.write(reinterpret_cast<const char *>(&this->m_clean), sizeof(this->m_clean));
-        auto ciphertext_offset = this->m_ciphertext.save(stream);
+        auto ciphertext_offset = this->m_ciphertext.save(stream, seal::compr_mode_type::none);
+        //cout << "ciphertext_offset:" << ciphertext_offset <<endl;
         return sizeof(this->rescale_required)  
         +sizeof(this->relinearize_required) 
         +sizeof(this->m_size)
-        + sizeof(this->m_clean);
+        + sizeof(this->m_clean)
         + ciphertext_offset;
     }
 }

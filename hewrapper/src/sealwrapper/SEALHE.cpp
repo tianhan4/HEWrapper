@@ -8,8 +8,6 @@
 using namespace std;
 
 namespace hewrapper{
-
-
     inline static void _multiply_rescale(SEALCiphertext &arg0, 
                     double arg1,
                     std::shared_ptr<hewrapper::SEALEngine> engine){
@@ -107,8 +105,10 @@ namespace hewrapper{
     inline void _match_scale(S& arg0, const T& arg1){
             const auto scale0 = arg0.scale();
             const auto scale1 = arg1.scale();
-            //cout << scale0 << " " << scale1 << endl;
-            assert(_within_rescale_tolerance(scale0, scale1));
+            if (!_within_rescale_tolerance(scale0, scale1)){
+                cout << scale0 << " " << scale1 << endl;
+                throw std::invalid_argument(" Scaling factors mismatch!");
+            }
             arg0.scale() = arg1.scale();
     }
 
@@ -272,6 +272,10 @@ namespace hewrapper{
     void seal_multiply_inplace(SEALCiphertext &arg0, SEALPlaintext &arg1){
         std::shared_ptr<hewrapper::SEALEngine> engine = arg0.getSEALEngine();
         std::shared_ptr<seal::SEALContext> context = engine->get_context()->get_sealcontext();
+        if (arg1.clean()){
+            arg0.clean() = true;
+            return;
+        }
         if (arg0.clean()){
             return;
         }
@@ -375,14 +379,15 @@ namespace hewrapper{
     void seal_multiply_inplace(SEALCiphertext &arg0, double scalar, const seal::MemoryPoolHandle& pool){
         std::shared_ptr<hewrapper::SEALEngine> engine = arg0.getSEALEngine();
         std::shared_ptr<seal::SEALContext> context = engine->get_context()->get_sealcontext();
-        if (scalar == 0){
-            arg0.clean() = true;
-            return;
-        }
         if (arg0.clean()){
             return;
         }
-        if(scalar == 1.0){
+        if(abs(scalar - 1.0)<1e-6){
+            return;
+        }
+        if (abs(scalar) < 1e-6){
+            cout << "scalar" << scalar << endl;
+            arg0.clean() = true;
             return;
         }
         SEALPlaintext plaintext;
@@ -391,9 +396,46 @@ namespace hewrapper{
     }
 
 
+    static void inverse_rescale(SEALCiphertext &arg0,
+                    std::shared_ptr<hewrapper::SEALEngine> engine){
+        std::shared_ptr<seal::SEALContext> context = engine->get_context()->get_sealcontext();
+        if (arg0.clean()){
+            return;
+        }
+        
+        SEALPlaintext plaintext;
+        //work around the 1.0 optimization in seal_multiply_inplace.
+        engine->encode(1.0, engine->scale(), plaintext);
+        seal_multiply_inplace(arg0, plaintext);
+    }
+
     inline void _add_rescale(SEALCiphertext &arg0, 
                     SEALCiphertext &arg1,
                     std::shared_ptr<hewrapper::SEALEngine> engine){
+        if(arg0.rescale_required && arg1.rescale_required){
+        }
+        else if(arg0.rescale_required){
+                //engine->get_evaluator()->rescale_to_next_inplace(arg0.ciphertext());
+                //arg0.rescale_required = false;
+                inverse_rescale(arg1, engine);
+                arg1.rescale_required = true;
+        }
+        else if(arg1.rescale_required){                
+                //engine->get_evaluator()->rescale_to_next_inplace(arg1.ciphertext());
+                //arg1.rescale_required = false;
+                inverse_rescale(arg0, engine);
+                arg0.rescale_required = true;
+        }
+        if(arg0.relinearize_required && arg1.relinearize_required){
+        }else if (arg0.relinearize_required){
+            engine->get_evaluator()->relinearize_inplace(arg0.ciphertext(), *(engine->get_context()->get_relin_keys()));
+            arg0.relinearize_required = false;
+        }else if(arg1.relinearize_required){
+            engine->get_evaluator()->relinearize_inplace(arg1.ciphertext(), *(engine->get_context()->get_relin_keys()));
+            arg1.relinearize_required = false;
+        }
+
+                        /**
         if(arg0.rescale_required && arg1.rescale_required){
         }
         else if(arg0.rescale_required){
@@ -411,7 +453,7 @@ namespace hewrapper{
         }else if(arg1.relinearize_required){
             engine->get_evaluator()->relinearize_inplace(arg1.ciphertext(), *(engine->get_context()->get_relin_keys()));
             arg1.relinearize_required = false;
-        }
+        }**/
     }
 
     inline void _add_rescale(SEALCiphertext &arg0, 
@@ -448,8 +490,14 @@ namespace hewrapper{
         std::shared_ptr<hewrapper::SEALEngine> engine = arg0.getSEALEngine();
         std::shared_ptr<seal::SEALContext> context = engine->get_context()->get_sealcontext();
         if (arg0.clean()){
-            printf("some bad operation: seal_add_inplace better not use clean ciphertexts as arg0 when adding plaintext.\n");
+            //printf("some bad operation: seal_add_inplace better not use clean ciphertexts as arg0 when adding plaintext.\n");
+            //saved by zero encryption
+            //cout << "oldsize:" << arg0.size() << endl;
+            int old_size = arg0.size();
             engine->encrypt(arg1, arg0);
+            if (old_size != 0){
+                arg0.size() = old_size;   
+            }
             //arg0.clean() = false;//no need
             return;
         }

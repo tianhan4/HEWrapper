@@ -13,6 +13,7 @@ public:
     SEALCiphertext(){};
 
    inline void init(std::shared_ptr<SEALEngine> sealengine){
+        this->m_clean = false;
         this->m_sealengine = sealengine;
     }
  

@@ -16,6 +16,7 @@
 #include <cmath>
 #include "SEALEngine.h"
 #include "SEALHE.h"
+#include "NetIO.h"
 
 /*
 Helper function: Prints a vector of floating-point values.
@@ -23,7 +24,7 @@ Helper function: Prints a vector of floating-point values.
 
 using namespace std;
 using namespace hewrapper;
-
+std::random_device rd;
 // Change for other encryption wrappers
 typedef SEALEncryptionParameters HWEncryptionParameters;
 typedef SEALEngine HWWrapper;
@@ -104,9 +105,10 @@ void example_ckks_basics() {
     
 
     cout << "ckks test" << endl;
-    size_t poly_modulus_degree = 8192;
-    double standard_scale = 30;
-    std::vector<int> coeff_modulus = {40,30,30,30,40};
+    
+    size_t poly_modulus_degree = 16384;
+    double standard_scale = 24;
+    std::vector<int> coeff_modulus = {50,24,24,24,24,24,24,24,30};
     HWEncryptionParameters parms(poly_modulus_degree,
                     coeff_modulus,
                     seal_scheme::CKKS);
@@ -118,7 +120,7 @@ void example_ckks_basics() {
     print_vector<int>(coeff_modulus, coeff_modulus.size());
     cout << endl;
     cout << "slot count: " << slot_count<< endl;
-    cout << "scale: " << pow(2.0, 30) << endl;
+    cout << "scale: " << pow(2.0, 24) << endl;
     
 	engine->max_slot() = slot_count;
 
@@ -156,6 +158,43 @@ void example_ckks_basics() {
     cout << "Encrypt input vectors." << endl;
     engine->encrypt(x_plain, x1_encrypted);
 
+    //the multiply result of two zero ciphertexts
+    {
+        cout << "multiply result of two zero ciphertexts" << endl;
+        HWPlaintext x_p(engine);
+        HWCiphertext x_c(engine);
+        HWPlaintext y_p(engine);
+        HWCiphertext y_c(engine);
+        HWCiphertext z_c(engine);
+        HWPlaintext plaintext(engine);
+        engine->zero = new HWCiphertext(engine);
+        engine->encode(0, plaintext);
+        engine->encrypt(plaintext, *(engine->zero));
+        engine->encode(input, x_p);
+        engine->encode(input, y_p);
+        engine->encrypt(x_p, x_c);
+        engine->encrypt(y_p, y_c);
+        cout << "  The result from the multiplication of two non-zero cipehrtexts:" << endl;
+        seal_multiply(x_c, y_c, z_c);
+        HWPlaintext plain_result(engine);
+        engine->decrypt(z_c, plain_result);
+        vector<double> result;
+        engine->decode(plain_result, result);
+        print_vector(result, 3, 7);
+        //--------
+        cout << "  The result from the multiplication of two zero cipehrtexts:" << endl;
+        engine->encrypt(x_p, x_c);
+        engine->encrypt(y_p, y_c);
+        engine->get_evaluator()->mod_switch_to_inplace(x_c.ciphertext(), engine->get_context()->get_sealcontext()->last_parms_id());
+        engine->get_evaluator()->mod_switch_to_inplace(y_c.ciphertext(), engine->get_context()->get_sealcontext()->last_parms_id());
+        seal_multiply(x_c, y_c, z_c);
+        engine->decrypt(z_c, plain_result);
+        engine->decode(plain_result, result);
+        print_vector(result, 3, 7);
+    }
+    
+        
+/**
     // check add plain is element-wise add.
     HWCiphertext x3_encrypted(engine);
     HWPlaintext result_tmp(engine);
@@ -201,9 +240,9 @@ void example_ckks_basics() {
     engine->decode(plain_result, result);
     cout << "    + Computed result ...... Correct." << endl;
     print_vector(result, 3, 7);
-
+**/
     chrono::high_resolution_clock::time_point time_start, time_end;
-    long long count = 10;
+    long long count = 100;
 
     chrono::microseconds time_add_encryption(0);
     chrono::microseconds time_raw_encryption(0);
@@ -233,6 +272,21 @@ void example_ckks_basics() {
     chrono::microseconds time_decryption_with_relinearization(0);
     chrono::microseconds time_decryption_with_all(0);
 
+    chrono::microseconds time_decryption(0);
+    chrono::microseconds time_encryption(0);
+    chrono::microseconds time_decode(0);
+    chrono::microseconds time_encode(0);
+    chrono::microseconds time_rotate_one_step(0);
+    chrono::microseconds time_rotate_random(0);
+    chrono::microseconds time_rescale(0);
+    chrono::microseconds time_relinearization(0);
+
+    
+    chrono::microseconds time_modulus_switching_to_zero(0);
+
+    chrono::microseconds time_decryption_zero(0);
+    chrono::microseconds time_decode_zero(0);
+
 
     cout << "Running pi*x and pi+x for" << count << " times." << endl;
     for ( long long i = 0; i < count ; i ++){
@@ -242,10 +296,10 @@ void example_ckks_basics() {
             HWPlaintext y_p(engine);
             HWCiphertext y_c(engine);
             HWCiphertext z_c(engine);
-            //HWPlaintext plaintext(engine);
-            //engine->zero = new HWCiphertext(engine);
-            //engine->encode(0, plaintext);
-            //engine->encrypt(plaintext, *(engine->zero));
+            HWPlaintext plaintext(engine);
+            engine->zero = new HWCiphertext(engine);
+            engine->encode(0, plaintext);
+            engine->encrypt(plaintext, *(engine->zero));
             engine->encode(input, x_p);
             engine->encode(input, y_p);
             engine->encrypt(x_p, x_c);
@@ -264,7 +318,7 @@ void example_ckks_basics() {
             engine->encode(input, x_p);
             engine->encode(input, y_p);
             engine->encrypt(x_p, x_c);
-            //engine->zero = nullptr;
+            engine->zero = nullptr;
             time_start = chrono::high_resolution_clock::now();
             engine->encrypt(y_p, y_c);
             time_end = chrono::high_resolution_clock::now();
@@ -682,8 +736,176 @@ void example_ckks_basics() {
             print_vector(result, 3, 7);
         }
         // count << "Test 3: Is lazy rescale helpful?" << endl;
+        // cout << "Other basic operations" << endl;
+        
+        {
+            HWPlaintext x_p(engine);
+            HWCiphertext x_c(engine);
+            HWPlaintext z_p(engine);
+            HWCiphertext z_c(engine);
+            engine->encode(input, x_p);
+            engine->encrypt(x_p, x_c);
+            engine->encode(input, z_p);
+            engine->encrypt(z_p, z_c);
+            time_start = chrono::high_resolution_clock::now();
+            engine->decrypt(z_c,z_p);
+            time_end = chrono::high_resolution_clock::now();
+            time_decryption += chrono::duration_cast<chrono::microseconds>(time_end - time_start);
+            vector<double> result;
+            engine->decode(z_p, result);
+            print_vector(result, 3, 7);
+        }
+        {
+            HWPlaintext x_p(engine);
+            HWCiphertext x_c(engine);
+            HWPlaintext z_p(engine);
+            HWCiphertext z_c(engine);
+            engine->encode(input, x_p);
+            engine->encrypt(x_p, x_c);
+            engine->encode(input, z_p);
+            time_start = chrono::high_resolution_clock::now();
+            engine->encrypt(z_p, z_c);
+            time_end = chrono::high_resolution_clock::now();
+            time_encryption += chrono::duration_cast<chrono::microseconds>(time_end - time_start);
+            vector<double> result;
+            engine->decrypt(z_c,z_p);
+            engine->decode(z_p, result);
+            print_vector(result, 3, 7);
+        }
+        {
+            HWPlaintext x_p(engine);
+            HWCiphertext x_c(engine);
+            time_start = chrono::high_resolution_clock::now();
+            engine->encode(input, x_p);
+            time_end = chrono::high_resolution_clock::now();
+            time_encode += chrono::duration_cast<chrono::microseconds>(time_end - time_start);
+        }
+        {
+            HWPlaintext x_p(engine);
+            HWCiphertext x_c(engine);
+            HWPlaintext z_p(engine);
+            HWCiphertext z_c(engine);
+            engine->encode(input, x_p);
+            engine->encrypt(x_p, x_c);
+            engine->encode(input, z_p);
+            engine->encrypt(z_p, z_c);
+            engine->decrypt(z_c,z_p);
+            vector<double> result;
+            time_start = chrono::high_resolution_clock::now();
+            engine->decode(z_p, result);
+            time_end = chrono::high_resolution_clock::now();
+            print_vector(result, 3, 7);
+            time_decode += chrono::duration_cast<chrono::microseconds>(time_end - time_start);
+        }
+        {
+            HWPlaintext x_p(engine);
+            HWCiphertext x_c(engine);
+            engine->encode(input, x_p);
+            engine->encrypt(x_p, x_c);
+            time_start = chrono::high_resolution_clock::now();
+            engine->get_evaluator()->rotate_vector_inplace(x_c.ciphertext(), 1, *(engine->get_context()->get_galois_keys()));
+            engine->get_evaluator()->rotate_vector_inplace(x_c.ciphertext(), -1, *(engine->get_context()->get_galois_keys()));
+            time_end = chrono::high_resolution_clock::now();
+            time_rotate_one_step += chrono::duration_cast<chrono::microseconds>((time_end - time_start));
+        }
+        {
+            HWPlaintext x_p(engine);
+            HWCiphertext x_c(engine);
+            engine->encode(input, x_p);
+            engine->encrypt(x_p, x_c);
+            int random_rotation = static_cast<int>(rd() % engine->slot_count());
+            time_start = chrono::high_resolution_clock::now();
+            engine->get_evaluator()->rotate_vector_inplace(x_c.ciphertext(), random_rotation, *(engine->get_context()->get_galois_keys()));
+            time_end = chrono::high_resolution_clock::now();
+            time_rotate_random += chrono::duration_cast<chrono::microseconds>((time_end - time_start));
+        }
+
+        //cout << "Is zero decryption better?" << endl;
+        {
+            HWPlaintext x_p(engine);
+            HWCiphertext x_c(engine);
+            HWPlaintext z_p(engine);
+            HWCiphertext z_c(engine);
+            engine->encode(input, x_p);
+            engine->encrypt(x_p, x_c);
+            engine->encode(input, z_p);
+            engine->encrypt(z_p, z_c);
+            seal_multiply_inplace(z_c, x_c);
+            time_start = chrono::high_resolution_clock::now();
+            engine->get_evaluator()->mod_switch_to_inplace(z_c.ciphertext(), engine->get_context()->get_sealcontext()->last_parms_id());
+            time_end = chrono::high_resolution_clock::now();
+            size_t chain_ind1 = engine->get_context()->get_sealcontext()->get_context_data(z_c.ciphertext().parms_id())->chain_index();
+            cout << "new_level:" << chain_ind1 << endl;
+            time_modulus_switching_to_zero += chrono::duration_cast<chrono::microseconds>(time_end - time_start);
+        }
+        {// rescale
+            HWPlaintext x_p(engine);
+            HWCiphertext x_c(engine);
+            HWPlaintext z_p(engine);
+            HWCiphertext z_c(engine);
+            engine->encode(input, x_p);
+            engine->encrypt(x_p, x_c);
+            engine->encode(input, z_p);
+            engine->encrypt(z_p, z_c);
+            seal_multiply_inplace(z_c, x_c);
+            time_start = chrono::high_resolution_clock::now();
+            engine->get_evaluator()->rescale_to_next_inplace(z_c.ciphertext());
+            time_end = chrono::high_resolution_clock::now();
+            time_rescale += chrono::duration_cast<chrono::microseconds>(time_end - time_start);
+        }
+        {// relinearization
+            HWPlaintext x_p(engine);
+            HWCiphertext x_c(engine);
+            HWPlaintext z_p(engine);
+            HWCiphertext z_c(engine);
+            engine->encode(input, x_p);
+            engine->encrypt(x_p, x_c);
+            engine->encode(input, z_p);
+            engine->encrypt(z_p, z_c);
+            seal_multiply_inplace(z_c, x_c);
+            time_start = chrono::high_resolution_clock::now();
+            engine->get_evaluator()->relinearize_inplace(z_c.ciphertext(), *(engine->get_context()->get_relin_keys()));
+            time_end = chrono::high_resolution_clock::now();
+            time_relinearization += chrono::duration_cast<chrono::microseconds>(time_end - time_start);
+        }
 
 
+        {
+            HWPlaintext x_p(engine);
+            HWCiphertext x_c(engine);
+            HWPlaintext z_p(engine);
+            HWCiphertext z_c(engine);
+            engine->encode(input, x_p);
+            engine->encrypt(x_p, x_c);
+            engine->encode(input, z_p);
+            engine->encrypt(z_p, z_c);
+            engine->get_evaluator()->mod_switch_to_inplace(z_c.ciphertext(), engine->get_context()->get_sealcontext()->last_parms_id());
+            time_start = chrono::high_resolution_clock::now();
+            engine->decrypt(z_c,z_p);
+            time_end = chrono::high_resolution_clock::now();
+            time_decryption_zero += chrono::duration_cast<chrono::microseconds>(time_end - time_start);
+            vector<double> result;
+            engine->decode(z_p, result);
+            print_vector(result, 3, 7);
+        }
+        {
+            HWPlaintext x_p(engine);
+            HWCiphertext x_c(engine);
+            HWPlaintext z_p(engine);
+            HWCiphertext z_c(engine);
+            engine->encode(input, x_p);
+            engine->encrypt(x_p, x_c);
+            engine->encode(input, z_p);
+            engine->encrypt(z_p, z_c);
+            engine->get_evaluator()->mod_switch_to_inplace(z_c.ciphertext(), engine->get_context()->get_sealcontext()->last_parms_id());
+            engine->decrypt(z_c,z_p);
+            vector<double> result;
+            time_start = chrono::high_resolution_clock::now();
+            engine->decode(z_p, result);
+            time_end = chrono::high_resolution_clock::now();
+            print_vector(result, 3, 7);
+            time_decode_zero += chrono::duration_cast<chrono::microseconds>(time_end - time_start);
+        }
     }
     auto avg_square = time_square.count()/count;
     auto avg_square_inplace = time_square_inplace.count()/count;
@@ -713,6 +935,20 @@ void example_ckks_basics() {
     auto avg_decryption_with_relinearization = time_decryption_with_relinearization.count()/count;
     auto avg_decryption_with_all = time_decryption_with_all.count()/count;
 
+    auto avg_decryption = time_decryption.count()/count;
+    auto avg_encryption = time_encryption.count()/count;
+    auto avg_encode = time_encode.count()/count;
+    auto avg_decode = time_decode.count()/count;
+    auto avg_rotate_one_step = time_rotate_one_step.count()/(count * 2);
+    auto avg_rotate_random = time_rotate_random.count()/count;
+    auto avg_rescale = time_rescale.count()/count;
+    auto avg_relinearization = time_relinearization.count()/count;
+
+    auto avg_modulus_switching_to_zero = time_modulus_switching_to_zero.count()/count;
+
+    auto avg_decode_zero = time_decode_zero.count()/count;
+    auto avg_decryption_zero = time_decryption_zero.count()/count;
+
     cout << "Avg square:" << avg_square << "us" << endl;
     cout << "Avg square inplace:" << avg_square_inplace << "us" << endl;
     cout << "Avg add:" << avg_add << "us" << endl;
@@ -740,6 +976,23 @@ void example_ckks_basics() {
     cout << "Avg decryption with rescale" << avg_decryption_with_rescale << "us"  << endl;
     cout << "Avg decryption with relinearization" << avg_decryption_with_relinearization << "us"  << endl;
     cout << "Avg decryption with all" << avg_decryption_with_all << "us"  << endl;
+
+    cout << "Avg Rescale" << avg_rescale << "us"  << endl;
+    cout << "Avg Relinearization" << avg_relinearization << "us"  << endl;
+
+    cout << "Avg rotate one step" << avg_rotate_one_step << "us"  << endl;
+    cout << "Avg rorate random" << avg_rotate_random << "us"  << endl;
+    cout << "encode" << avg_encode << "us"  << endl;
+    cout << "decode" << avg_decode << "us"  << endl;
+    cout << "encrypt" << avg_encryption << "us"  << endl;
+    cout << "decrypt" << avg_decryption << "us"  << endl;
+
+    
+    cout << "decode zero level" << avg_decode_zero << "us"  << endl;
+    cout << "decrypt zero level" << avg_decryption_zero << "us"  << endl;
+
+    cout << "modulus swiching to zero level: " << avg_modulus_switching_to_zero << "us" << endl;
+    
 
 }
 

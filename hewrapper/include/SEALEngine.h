@@ -7,15 +7,15 @@
 using namespace std;
 using namespace hewrapper;
 
+class NetIO;
 namespace hewrapper {
+class SEALCiphertext;
+class SEALPlaintext;
 //*******************************************************************************
 // SEALEngine Class is responsible for:
 // 1. Maintaining the encryption parameters;
 // 2. Generate Ciphertexts and Plaintexts for the application;
 //*******************************************************************************
-class SEALCiphertext;
-class SEALPlaintext;
-void seal_add(const SEALCiphertext &arg0, SEALPlaintext &arg1, SEALCiphertext &out);
 template <typename T>
 void replicate_vector(std::vector<T>& vec, size_t final_size);
 
@@ -24,6 +24,9 @@ public:
     SEALEngine(): ctx(NULL), encoder(NULL), encryptor(NULL), decryptor(NULL) {}
 
     void init(const SEALEncryptionParameters &parms, size_t standard_scale, bool lazy_mode = true, bool auto_mod_switch = true, bool noise_mode = false);
+    
+    void createNetworkIO(const char * address, int port);
+    
     // 1.
     inline std::shared_ptr<SEALCtx> get_context() const{
         return ctx;
@@ -74,6 +77,12 @@ public:
     bool const noise_mode() const{
         return m_noise_mode;
     }
+    bool &remote_mode(){
+        return m_remote_mode;
+    }
+    bool const remote_mode() const{
+        return m_remote_mode;
+    }
 
     size_t &max_slot(){
         return m_max_slot;
@@ -118,6 +127,7 @@ public:
 
     SEALCiphertext * zero = 0;
 
+    std::shared_ptr<NetIO> network_io;
 private:
     double m_standard_scale;
     size_t m_max_slot;
@@ -126,6 +136,8 @@ private:
     bool m_lazy_relinearization_mode;
     bool m_auto_mod_switch;
     bool m_noise_mode;
+    bool m_remote_mode = false;
+
 
     std::shared_ptr<SEALCtx> ctx;
     std::shared_ptr<seal::CKKSEncoder> encoder;

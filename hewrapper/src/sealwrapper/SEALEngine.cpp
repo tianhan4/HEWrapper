@@ -1,6 +1,9 @@
 #include <seal/seal.h>
 #include "SEALEngine.h"
+#include "NetIO.h"
 
+
+void seal_add(const SEALCiphertext &arg0, SEALPlaintext &arg1, SEALCiphertext &out);
 using namespace hewrapper;
 
 namespace hewrapper{
@@ -19,7 +22,16 @@ namespace hewrapper{
         this->m_max_slot = this->encoder->slot_count();
     }
 
+    void SEALEngine::createNetworkIO(const char * address, int port){
+        this->network_io = make_shared<NetIO>(address, port, this->shared_from_this());
+    }
+
     void SEALEngine::decode(SEALPlaintext &plaintext, std::vector<double> &destination){
+        if(plaintext.clean()){
+            destination.resize(plaintext.size());
+            std::fill(destination.begin(), destination.end(), 0.0);
+            return;
+        }
         int vector_size = plaintext.size();
         encoder->decode(plaintext.plaintext(), destination);
         destination.resize(vector_size);
@@ -38,7 +50,8 @@ namespace hewrapper{
     }
 
     void SEALEngine::encode(std::vector<double> &values, double scale, SEALPlaintext& plaintext){
-        plaintext.size() = values.size();
+        int old_size = values.size();
+        plaintext.size() = old_size;
         auto slot_count = encoder->slot_count();
         if (values.size() > slot_count)
                 // number of slots available is poly_modulus_degree / 2
@@ -47,14 +60,19 @@ namespace hewrapper{
                 "polynomial modulus degree.");
         replicate_vector(values, slot_count);
         encoder->encode(values, scale, plaintext.plaintext());
+        values.resize(old_size);
         plaintext.init(shared_from_this());
     }
 
 
-    void SEALEngine::encode(double value, double scale, SEALPlaintext& plaintext){
+    void SEALEngine::encode(double value, double scale, SEALPlaintext& plaintext){  
         encoder->encode(value, scale, plaintext.plaintext());
         plaintext.size() = 1;
         plaintext.init(shared_from_this());
+        if (abs(value) < 1e-6){
+            //cout << "scalar" << value << endl;
+            plaintext.clean() = true;
+        }
     }
 
     void SEALEngine::encrypt(SEALPlaintext &plaintext, SEALCiphertext& ciphertext){
@@ -79,7 +97,10 @@ namespace hewrapper{
 
     void SEALEngine::decrypt(SEALCiphertext &ciphertext, SEALPlaintext &plaintext){
         if(ciphertext.clean()){
-            throw std::invalid_argument("why decrypt a clean ciphertext?");
+            cout << "why decrypt a clean ciphertext?" << endl;
+            plaintext.clean() = true;
+            plaintext.size() = ciphertext.size();
+            return;
         }
         //make sure no non-rescaled cophertexts going out.
         //why comment this?

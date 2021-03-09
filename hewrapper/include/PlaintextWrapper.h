@@ -15,6 +15,7 @@ public:
             :m_sealengine(sealengine){}
 
     inline void init(std::shared_ptr<SEALEngine> sealengine){
+        this->m_clean = false;
         this->m_sealengine = sealengine;
     }
 
@@ -30,6 +31,13 @@ public:
     inline auto &size(){
             return m_size;
     }
+    inline auto &clean(){
+        return m_clean;
+    }
+    inline auto clean() const{
+        return m_clean;
+    }
+
 
     //void save(pd::HEType& he_type) const;
 
@@ -58,6 +66,7 @@ private:
     std::shared_ptr<hewrapper::SEALEngine> m_sealengine;
     seal::Plaintext m_plaintext;
 private:
+    bool m_clean = false;
     
 };
 

@@ -7,6 +7,7 @@ all: build
 build:
 	$(MAKE) -C sealwrapper
 	$(AR) rcs $(HW_LIB) sealwrapper/lib/libseal.a sealwrapper/sealengine.o sealwrapper/sealhe.o sealwrapper/ciphertextwrapper.o
+	@mv sealwrapper/netio.o .
 	$(MAKE) -C sealwrapper clean
 
 clean:
