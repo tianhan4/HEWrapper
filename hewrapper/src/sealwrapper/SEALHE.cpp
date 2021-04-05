@@ -386,7 +386,7 @@ namespace hewrapper{
             return;
         }
         if (abs(scalar) < 1e-6){
-            cout << "scalar" << scalar << endl;
+            //cout << "scalar" << scalar << endl;
             arg0.clean() = true;
             return;
         }

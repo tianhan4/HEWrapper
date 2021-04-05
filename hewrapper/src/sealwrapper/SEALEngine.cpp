@@ -111,6 +111,14 @@ namespace hewrapper{
         //if(this->lazy_mode() && ciphertext.relinearize_required){
         //    evaluator->relinearize_inplace(ciphertext.ciphertext(), *(ctx->get_relin_keys()));
         //}
+        
+        //if not level 0, switch to 0 firstly.
+        std::shared_ptr<hewrapper::SEALEngine> engine = ciphertext.getSEALEngine();
+        auto context = engine->get_context()->get_sealcontext();
+        size_t level = context->get_context_data(ciphertext.ciphertext().parms_id())->chain_index();
+        //cout << level << endl;
+        if(level > 0)
+            engine->get_evaluator()->mod_switch_to_inplace(ciphertext.ciphertext(), context->last_parms_id());
         decryptor->decrypt(ciphertext.ciphertext(), plaintext.plaintext());
         plaintext.size() = ciphertext.size();
     }
