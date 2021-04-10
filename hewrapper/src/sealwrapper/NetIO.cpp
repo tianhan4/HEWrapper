@@ -27,7 +27,7 @@ m_engine{engine},consocket{m_io_context}{
         boost::asio::ip::tcp::resolver resolver(m_io_context);
         //boost::asio::ip::tcp::endpoint server_endpoints(boost::asio::ip::tcp::v4(), port);
         //used for gpu06
-        boost::asio::ip::tcp::endpoint server_endpoints(boost::asio::ip::address::from_string("10.0.6.1"), port);
+        boost::asio::ip::tcp::endpoint server_endpoints(boost::asio::ip::address::from_string("10.0.3.1"), port);
         m_acceptor = std::make_unique<boost::asio::ip::tcp::acceptor>(
             m_io_context, server_endpoints);
         boost::asio::socket_base::reuse_address option(true);
