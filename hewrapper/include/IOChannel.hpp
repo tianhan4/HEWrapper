@@ -60,6 +60,7 @@ class IOChannel { public:
 			number *= dim[j];
 		bool is_level_zero = false;
 		std::shared_ptr<hewrapper::SEALEngine> engine = ciphertext->getSEALEngine();
+        for_decryption = engine->zero_decryption;
 		auto context = engine->get_context()->get_sealcontext();
 		if(for_decryption){
 			size_t level = context->get_context_data(ciphertext->ciphertext().parms_id())->chain_index();

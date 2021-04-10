@@ -415,16 +415,22 @@ namespace hewrapper{
         if(arg0.rescale_required && arg1.rescale_required){
         }
         else if(arg0.rescale_required){
-                //engine->get_evaluator()->rescale_to_next_inplace(arg0.ciphertext());
-                //arg0.rescale_required = false;
-                inverse_rescale(arg1, engine);
-                arg1.rescale_required = true;
+                if(engine->inverse_rescaling){
+                    engine->get_evaluator()->rescale_to_next_inplace(arg0.ciphertext());
+                    arg0.rescale_required = false;
+                }else{
+                    inverse_rescale(arg1, engine);
+                    arg1.rescale_required = true;
+                }
         }
-        else if(arg1.rescale_required){                
-                //engine->get_evaluator()->rescale_to_next_inplace(arg1.ciphertext());
-                //arg1.rescale_required = false;
-                inverse_rescale(arg0, engine);
-                arg0.rescale_required = true;
+        else if(arg1.rescale_required){ 
+                if(engine->inverse_rescaling){
+                    inverse_rescale(arg0, engine);
+                    arg0.rescale_required = true;
+                }else{
+                    engine->get_evaluator()->rescale_to_next_inplace(arg1.ciphertext());
+                    arg1.rescale_required = false;
+                }
         }
         if(arg0.relinearize_required && arg1.relinearize_required){
         }else if (arg0.relinearize_required){

@@ -117,7 +117,7 @@ namespace hewrapper{
         auto context = engine->get_context()->get_sealcontext();
         size_t level = context->get_context_data(ciphertext.ciphertext().parms_id())->chain_index();
         //cout << level << endl;
-        if(level > 0)
+        if(level > 0 && engine->zero_decryption)
             engine->get_evaluator()->mod_switch_to_inplace(ciphertext.ciphertext(), context->last_parms_id());
         decryptor->decrypt(ciphertext.ciphertext(), plaintext.plaintext());
         plaintext.size() = ciphertext.size();

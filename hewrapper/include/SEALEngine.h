@@ -127,6 +127,10 @@ public:
 
     SEALCiphertext * zero = 0;
 
+
+    bool inverse_rescaling = true;
+    bool zero_decryption = true;
+
     std::shared_ptr<NetIO> network_io;
 private:
     double m_standard_scale;
