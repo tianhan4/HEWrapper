@@ -19,7 +19,7 @@ build: lib/libseal.a
 
 
 lib/libseal.a:
-	@cd $(SEAL_DIR); make clean; cmake . -DCMAKE_INSTALL_PREFIX=$(CUR_DIR) -DCMAKE_C_COMPILER=/usr/bin/gcc -DCMAKE_CXX_COMPILER=/usr/bin/g++; make -j4;  make install
+	@cd $(SEAL_DIR); make clean; cmake . -DCMAKE_INSTALL_PREFIX=$(CUR_DIR) -DCMAKE_C_COMPILER=/usr/bin/gcc -DCMAKE_CXX_COMPILER=/usr/bin/g++ -DSEAL_THROW_ON_TRANSPARENT_CIPHERTEXT=OFF; make -j4;  make install
 	#@cd $(SEAL_DIR); cmake . -DCMAKE_INSTALL_PREFIX=$(CUR_DIR); make -j4; make install
 	mv lib/libseal-$(SEAL_VER).a lib/libseal.a
 
